@@ -1,6 +1,6 @@
 # userver
 
-<img src="./scripts/docs/logo.svg" align='center' width="30%">
+<img src="./scripts/docs/logo.svg" align='left' width="30%">
 
 | Service Templates | Status |
 |------------------------|-----|
