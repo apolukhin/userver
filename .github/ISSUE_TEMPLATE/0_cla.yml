@@ -1,15 +1,14 @@
-name: CLA note
-description: Note on CLA automatic agreement
+name: Issue
+description: Feature request or bug report
 body:
   - type: markdown
     attributes:
       value: |
-        By creating a PR or an issue you automatically argee to the CLA.
-        See CONTRIBUTING.md
+        By creating a PR or an issue you automatically argee to the CLA. See [CONTRIBUTING.md](./CONTRIBUTING.md)
   - type: textarea
     id: what-happened
     attributes:
-      label: What happened?
+      label: Add a description
       description: Also tell us, what did you expect to happen?
       placeholder: Tell us what you see!
     validations:
