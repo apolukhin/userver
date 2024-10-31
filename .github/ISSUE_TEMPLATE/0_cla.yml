@@ -1,0 +1,8 @@
+name: CLA note
+description: Note on CLA automatic agreement
+body:
+ - type: markdown
+    attributes:
+      value: |
+        By creating a PR or an issue you automatically argee to the CLA.
+        See CONTRIBUTING.md
