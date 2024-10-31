@@ -1,10 +1,10 @@
-name: Issue
+name: Default
 description: Feature request or bug report
 body:
   - type: markdown
     attributes:
       value: |
-        By creating a PR or an issue you automatically argee to the CLA. See [CONTRIBUTING.md](https://github.com/apolukhin/userver/blob/develop/CONTRIBUTING.md).
+        **Note:** By creating a PR or an issue you automatically argee to the CLA. See [CONTRIBUTING.md](https://github.com/apolukhin/userver/blob/develop/CONTRIBUTING.md).
   - type: textarea
     id: what-happened
     attributes:
