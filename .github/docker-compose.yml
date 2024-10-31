@@ -2,7 +2,7 @@ version: "2.3"
 
 services:
     ubuntu-22.04-userver-base-ci:
-        image: ghcr.io/userver-framework/ubuntu-22.04-userver-base-ci:latest
+        image: ghcr.io/userver-framework/ubuntu-22.04-userver-base-ci:latestasdasd
         container_name: ubuntu-22.04-userver-base-ci
         networks:
           - nexportfalse
