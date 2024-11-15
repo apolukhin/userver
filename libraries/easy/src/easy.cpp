@@ -3,13 +3,15 @@
 #include <fstream>
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/components/run.hpp>
 #include <userver/components/component_context.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
+#include <userver/testsuite/testsuite_support.hpp>
+#include <userver/clients/dns/component.hpp>
 #include <userver/utils/daemon_run.hpp>
-
 #include <userver/storages/postgres/component.hpp>
 
 USERVER_NAMESPACE_BEGIN
@@ -45,10 +47,10 @@ components_manager:
 
 
 constexpr std::string_view kConfigHandlerTemplate = R"~(
-        {0}:
-            path: {0}                  # Registering handler by URL '{0}'.
-            method: GET,POST              # It will only reply to GET (HEAD) and POST requests.
-            task_processor: main-task-processor  # Run it on CPU bound task processor
+{0}:
+    path: {0}                  # Registering handler by URL '{0}'.
+    method: GET,POST              # It will only reply to GET (HEAD) and POST requests.
+    task_processor: main-task-processor  # Run it on CPU bound task processor
 )~";
 
 class EmptyDeps final : public DependenciesBase {
@@ -141,14 +143,37 @@ void HttpBase::Route(std::string_view path, UnderlyingCallback&& func) {
 }
 
 void HttpBase::AddHandleConfig(std::string_view path) {
-    static_config_ += fmt::format(kConfigHandlerTemplate, path);
+    AddComponentsConfig(fmt::format(kConfigHandlerTemplate, path));
+}
+
+void HttpBase::AddComponentsConfig(std::string_view config) {
+    static_config_ += boost::algorithm::replace_all_copy(std::string{config}, "\n", "\n        ");
 }
 
 }  // namespace impl
 
 
-Postgres::Postgres(const components::ComponentConfig& config, const components::ComponentContext& context)
-: DependenciesBase{config, context}, pg_cluster_(context.FindComponent<components::Postgres>("key-value-database").GetCluster()) {}
+PgDep::PgDep(const components::ComponentConfig& config, const components::ComponentContext& context)
+: DependenciesBase{config, context}, pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster()) {}
+
+void DependenciesRegistration(HttpWith<PgDep>& app) {
+    app.AddComponentsConfig(R"~(
+postgres:
+    dbconnection#env: POSTGRESQL
+    dbconnection#fallback: 'postgresql://testsuite@localhost:15433/postgres'
+    blocking_task_processor: fs-task-processor
+    dns_resolver: async
+
+testsuite-support:
+
+dns-client:
+    fs-task-processor: fs-task-processor
+)~");
+
+    app.AppendComponent<components::Postgres>("postgres");
+    app.AppendComponent<components::TestsuiteSupport>();
+    app.AppendComponent<clients::dns::Component>();
+}
 
 }  // namespace easy
 

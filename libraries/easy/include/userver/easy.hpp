@@ -45,9 +45,18 @@ public:
     void DefaultContentType(http::ContentType content_type);
     void Route(std::string_view path, UnderlyingCallback&& func);
 
+    void AddComponentsConfig(std::string_view config);
+
+    template <class Component>
+    void AppendComponent(std::string_view name) {
+        component_list_.Append<Component>(name);
+    }
+    template <class Component>
+    void AppendComponent() {
+        component_list_.Append<Component>();
+    }
 private:
     void AddHandleConfig(std::string_view path);
-    void AddDependencyConfig(std::string_view config);
 
     class Handle;
 
@@ -59,14 +68,22 @@ private:
 
 }
 
-template <class Dependency>
-class Configurator;
-
-template <>
-class Configurator<void> {};
-
 template <class Dependency = void>
-class HttpWith final : public Configurator<Dependency> {
+class HttpWith;
+
+inline void DependenciesRegistration(HttpWith<void>&) {}
+
+template <class T>
+inline void DependenciesRegistration(HttpWith<T>&) {
+    static_assert(sizeof(T) && false, "Define `void DependenciesRegistration(HttpWith<T>& app)` "
+        "in the namespace of the your type `T` to automatically add required configurations and "
+        "components to the `app` for your dependences type `T`.  For example:"
+        "void DependenciesRegistration(HttpWith<MyDeps>& app) { app.AppendComponent<MyComponent>(); }"
+    );
+}
+
+template <class Dependency>
+class HttpWith final {
 public:
     class Callback {
     public:
@@ -80,7 +97,10 @@ public:
     };
 
     HttpWith(int argc, const char *const argv[]) : impl_(argc, argv) {}
-    ~HttpWith() = default;
+
+    ~HttpWith() {
+        DependenciesRegistration(*this);  // ADL is intentional
+    }
     
     HttpWith& DefaultContentType(http::ContentType content_type) {
         impl_.DefaultContentType(content_type);
@@ -89,6 +109,23 @@ public:
 
     HttpWith& Route(std::string_view path, Callback&& func) {
         impl_.Route(path, std::move(func).Extract());
+        return *this;
+    }
+
+    HttpWith& AddComponentsConfig(std::string_view config) {
+        impl_.AddComponentsConfig(config);
+        return *this;
+    }
+
+    template <class Component>
+    HttpWith& AppendComponent(std::string_view name) {
+        impl_.AppendComponent<Component>(name);
+        return *this;
+    }
+
+    template <class Component>
+    HttpWith& AppendComponent() {
+        impl_.AppendComponent<Component>();
         return *this;
     }
 
@@ -113,9 +150,9 @@ HttpWith<Dependency>::Callback::Callback(Function func) {
     }
 }
 
-class Postgres : public DependenciesBase {
+class PgDep : public DependenciesBase {
 public:
-    Postgres(const components::ComponentConfig& config, const components::ComponentContext& context);
+    PgDep(const components::ComponentConfig& config, const components::ComponentContext& context);
 
     storages::postgres::Cluster& pg() const noexcept { return *pg_cluster_; }
 
@@ -123,12 +160,15 @@ private:
     storages::postgres::ClusterPtr pg_cluster_;
 };
 
+void DependenciesRegistration(HttpWith<PgDep>& app);
+
+
 }  // namespace easy
 
 template <>
 inline constexpr auto components::kConfigFileMode<easy::DependenciesBase> = ConfigFileMode::kNotRequired;
 
 template <>
-inline constexpr auto components::kConfigFileMode<easy::Postgres> = ConfigFileMode::kNotRequired;
+inline constexpr auto components::kConfigFileMode<easy::PgDep> = ConfigFileMode::kNotRequired;
 
 USERVER_NAMESPACE_END
