@@ -5,6 +5,10 @@ if (USERVER_FEATURE_S3API)
   add_subdirectory(s3api)
 endif()
 
+if (USERVER_FEATURE_EASY)
+  add_subdirectory(easy)
+endif()
+
 if (USERVER_FEATURE_GRPC_REFLECTION)
   if (NOT USERVER_FEATURE_GRPC)
     message(FATAL_ERROR "'USERVER_FEATURE_GRPC_REFLECTION' requires 'USERVER_FEATURE_GRPC=ON'")
