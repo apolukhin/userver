@@ -25,9 +25,6 @@ public:
     ~Http();
 
     Http& Path(std::string_view path, Callback&& func);
-
-    [[nodiscard]] int Run();
-
 private:
     void AddHandleConfig(std::string_view path);
 

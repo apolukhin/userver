@@ -51,7 +51,7 @@ constexpr std::string_view kConfigHandlerTemplate = R"~(
 
 std::unordered_map<std::string, Http::Callback> g_http_functions_;
 
-}
+}  // anonymous namespace
 
 class Http::Handle final : public server::handlers::HttpHandlerBase {
 public:
@@ -71,18 +71,6 @@ Http::Http(int argc, const char *const argv[]) : argc_{argc}, argv_{argv}, stati
       component_list_{components::MinimalServerComponentList()} {}
 
 Http::~Http() {
-    g_http_functions_.clear();
-}
-
-Http& Http::Path(std::string_view path, Callback&& func) {
-    g_http_functions_.emplace(path, std::move(func));
-    component_list_.Append<Handle>(path);
-    AddHandleConfig(path);
-
-    return *this;
-}
-
-int Http::Run() {
     namespace po = boost::program_options;
 
     po::variables_map vm;
@@ -100,15 +88,26 @@ int Http::Run() {
 
     if (vm.count("dump-config")) {
         std::ofstream(config_dump) << static_config_;
-        return 0;
+        return;
     }
     
     if (argc_ <= 1) {
         components::Run(components::InMemoryConfig{static_config_}, component_list_);
-        return 0;
+        return;
     } else {
-        return utils::DaemonMain(argc_, argv_, component_list_);
-    } 
+        const auto ret = utils::DaemonMain(argc_, argv_, component_list_);
+        if (ret != 0) {
+            std::exit(ret);
+        }
+    }
+}
+
+Http& Http::Path(std::string_view path, Callback&& func) {
+    g_http_functions_.emplace(path, std::move(func));
+    component_list_.Append<Handle>(path);
+    AddHandleConfig(path);
+
+    return *this;
 }
 
 void Http::AddHandleConfig(std::string_view path) {

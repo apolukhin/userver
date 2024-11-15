@@ -4,10 +4,9 @@
 #include <userver/easy.hpp>
 
 int main(int argc, char* argv[]) {
-    return easy::Http(argc, argv) //
+    easy::Http(argc, argv) //
       .Path("/hello", [](const easy::HttpRequest& req) {
         req.GetHttpResponse().SetContentType(http::content_type::kTextPlain);
         return "Hello world";
-      }) //
-      .Run();
+      });
 }
