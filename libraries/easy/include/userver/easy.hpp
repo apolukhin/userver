@@ -28,38 +28,26 @@ public:
     virtual ~DependenciesBase();
 };
 
-class Callback {
+namespace impl {
+
+using UnderlyingCallback = std::function<std::string(const HttpRequest&, const DependenciesBase&)>;
+
+struct AggressiveUnicorn; // Do not unleash
+
+template <class Dependency>
+using ConstDependencyRef = std::conditional_t<std::is_void_v<Dependency>, AggressiveUnicorn, Dependency> const&; 
+
+class HttpBase {
 public:
-    using Underlying = std::function<std::string(const HttpRequest&, const DependenciesBase&)>;
-
-    template <class Function>
-    Callback(Function func) {
-        if constexpr (std::is_invocable_r_v<std::string, Function, const HttpRequest&, const DependenciesBase&>) {
-            func_ = std::move(func);
-        } else {
-          static_assert(std::is_invocable_r_v<std::string, Function, const HttpRequest&>);
-          func_ = [f = std::move(func)](const HttpRequest& req, const DependenciesBase&) {
-            return f(req);
-          };
-        }
-    }
-
-    Underlying Extract() && noexcept { return std::move(func_); }
-
-private:
-    std::function<std::string(const HttpRequest&, const DependenciesBase&)> func_;
-};
-
-class Http final {
-public:
-    Http(int argc, const char *const argv[]);
-    ~Http();
+    HttpBase(int argc, const char *const argv[]);
+    ~HttpBase();
     
-    Http& DefaultContentType(http::ContentType content_type);
+    void DefaultContentType(http::ContentType content_type);
+    void Route(std::string_view path, UnderlyingCallback&& func);
 
-    Http& Route(std::string_view path, Callback&& func);
 private:
     void AddHandleConfig(std::string_view path);
+    void AddDependencyConfig(std::string_view config);
 
     class Handle;
 
@@ -69,19 +57,61 @@ private:
     components::ComponentList component_list_;
 };
 
-///
+}
 
 template <class Dependency>
-class CallbackWith : public Callback {
-public:
-    using Callback::Callback;
+class Configurator;
 
-    CallbackWith(std::function<std::string(const HttpRequest&, const Dependency&)> func)
-        : Callback([f = std::move(func)](const HttpRequest& req, const DependenciesBase& deps) {
-            return f(req, static_cast<Dependency&>(deps));
-        })
-    {}
+template <>
+class Configurator<void> {};
+
+template <class Dependency = void>
+class HttpWith final : public Configurator<Dependency> {
+public:
+    class Callback {
+    public:
+        template <class Function>
+        Callback(Function func);
+
+        auto Extract() && noexcept { return std::move(func_); }
+
+    private:
+        impl::UnderlyingCallback func_;
+    };
+
+    HttpWith(int argc, const char *const argv[]) : impl_(argc, argv) {}
+    ~HttpWith() = default;
+    
+    HttpWith& DefaultContentType(http::ContentType content_type) {
+        impl_.DefaultContentType(content_type);
+        return *this;
+    }
+
+    HttpWith& Route(std::string_view path, Callback&& func) {
+        impl_.Route(path, std::move(func).Extract());
+        return *this;
+    }
+
+private:
+    impl::HttpBase impl_;
 };
+
+template <class Dependency>
+template <class Function>
+HttpWith<Dependency>::Callback::Callback(Function func) {
+    if constexpr (std::is_invocable_r_v<std::string, Function, const HttpRequest&, const DependenciesBase&>) {
+        func_ = std::move(func);
+    } else if constexpr (std::is_invocable_r_v<std::string, Function, const HttpRequest&, impl::ConstDependencyRef<Dependency> >) {
+        func_ = [f = std::move(func)](const HttpRequest& req, const DependenciesBase& deps) {
+            return f(req, static_cast<Dependency&>(deps));
+        };
+    } else {
+      static_assert(std::is_invocable_r_v<std::string, Function, const HttpRequest&>);
+      func_ = [f = std::move(func)](const HttpRequest& req, const DependenciesBase&) {
+        return f(req);
+      };
+    }
+}
 
 class Postgres : public DependenciesBase {
 public:

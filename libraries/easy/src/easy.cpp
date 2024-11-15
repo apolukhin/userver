@@ -65,7 +65,7 @@ const DependenciesBase& GetDeps(const components::ComponentConfig& config, const
     return empty;
 }
 
-std::unordered_map<std::string, Callback::Underlying> g_http_functions_;
+std::unordered_map<std::string, impl::UnderlyingCallback> g_http_functions_;
 std::optional<http::ContentType> default_content_type_;
 
 }  // anonymous namespace
@@ -73,7 +73,9 @@ std::optional<http::ContentType> default_content_type_;
 
 DependenciesBase::~DependenciesBase() = default;
 
-class Http::Handle final : public server::handlers::HttpHandlerBase {
+namespace impl {
+
+class HttpBase::Handle final : public server::handlers::HttpHandlerBase {
 public:
     Handle(const components::ComponentConfig& config, const components::ComponentContext& context):
       HttpHandlerBase(config, context),
@@ -90,13 +92,13 @@ public:
 
 private:
     const DependenciesBase& deps_;
-    Callback::Underlying& callback_;
+    impl::UnderlyingCallback& callback_;
 };
 
-Http::Http(int argc, const char *const argv[]) : argc_{argc}, argv_{argv}, static_config_{kConfigBase},
+HttpBase::HttpBase(int argc, const char *const argv[]) : argc_{argc}, argv_{argv}, static_config_{kConfigBase},
       component_list_{components::MinimalServerComponentList()} {}
 
-Http::~Http() {
+HttpBase::~HttpBase() {
     namespace po = boost::program_options;
 
     po::variables_map vm;
@@ -128,22 +130,21 @@ Http::~Http() {
     }
 }
 
-Http& Http::DefaultContentType(http::ContentType content_type) {
+void HttpBase::DefaultContentType(http::ContentType content_type) {
     default_content_type_ = content_type;
-    return *this;
 }
 
-Http& Http::Route(std::string_view path, Callback&& func) {
-    g_http_functions_.emplace(path, std::move(func).Extract());
+void HttpBase::Route(std::string_view path, UnderlyingCallback&& func) {
+    g_http_functions_.emplace(path, std::move(func));
     component_list_.Append<Handle>(path);
     AddHandleConfig(path);
-
-    return *this;
 }
 
-void Http::AddHandleConfig(std::string_view path) {
+void HttpBase::AddHandleConfig(std::string_view path) {
     static_config_ += fmt::format(kConfigHandlerTemplate, path);
 }
+
+}  // namespace impl
 
 
 Postgres::Postgres(const components::ComponentConfig& config, const components::ComponentContext& context)

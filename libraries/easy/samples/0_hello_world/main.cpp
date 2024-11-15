@@ -4,7 +4,7 @@
 #include <userver/easy.hpp>
 
 int main(int argc, char* argv[]) {
-    easy::Http(argc, argv) //
+    easy::HttpWith(argc, argv) //
       .DefaultContentType(http::content_type::kTextPlain)
       .Route("/hello", [](const easy::HttpRequest& /*req*/) {
         return "Hello world";
