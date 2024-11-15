@@ -6,8 +6,11 @@
 
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/components/run.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/utils/daemon_run.hpp>
+
+#include <userver/storages/postgres/component.hpp>
 
 USERVER_NAMESPACE_BEGIN
 
@@ -48,16 +51,33 @@ constexpr std::string_view kConfigHandlerTemplate = R"~(
             task_processor: main-task-processor  # Run it on CPU bound task processor
 )~";
 
+class EmptyDeps final : public DependenciesBase {
+    using DependenciesBase::DependenciesBase;
+};
 
-std::unordered_map<std::string, Http::Callback> g_http_functions_;
+const DependenciesBase& GetDeps(const components::ComponentConfig& config, const components::ComponentContext& context) {
+    const auto* deps = context.FindComponentOptional<DependenciesBase>();
+    if (deps) {
+        return *deps;
+    }
+
+    static const EmptyDeps empty{config, context};
+    return empty;
+}
+
+std::unordered_map<std::string, Callback::Underlying> g_http_functions_;
 std::optional<http::ContentType> default_content_type_;
 
 }  // anonymous namespace
+
+
+DependenciesBase::~DependenciesBase() = default;
 
 class Http::Handle final : public server::handlers::HttpHandlerBase {
 public:
     Handle(const components::ComponentConfig& config, const components::ComponentContext& context):
       HttpHandlerBase(config, context),
+      deps_{GetDeps(config, context)},
       callback_{g_http_functions_[config.Name()]}
     {}
 
@@ -65,10 +85,12 @@ public:
         if (default_content_type_) {
             request.GetHttpResponse().SetContentType(*default_content_type_);
         }
-        return callback_(request);
+        return callback_(request, deps_);
     }
+
 private:
-    Http::Callback& callback_;
+    const DependenciesBase& deps_;
+    Callback::Underlying& callback_;
 };
 
 Http::Http(int argc, const char *const argv[]) : argc_{argc}, argv_{argv}, static_config_{kConfigBase},
@@ -112,7 +134,7 @@ Http& Http::DefaultContentType(http::ContentType content_type) {
 }
 
 Http& Http::Route(std::string_view path, Callback&& func) {
-    g_http_functions_.emplace(path, std::move(func));
+    g_http_functions_.emplace(path, std::move(func).Extract());
     component_list_.Append<Handle>(path);
     AddHandleConfig(path);
 
@@ -122,6 +144,10 @@ Http& Http::Route(std::string_view path, Callback&& func) {
 void Http::AddHandleConfig(std::string_view path) {
     static_config_ += fmt::format(kConfigHandlerTemplate, path);
 }
+
+
+Postgres::Postgres(const components::ComponentConfig& config, const components::ComponentContext& context)
+: DependenciesBase{config, context}, pg_cluster_(context.FindComponent<components::Postgres>("key-value-database").GetCluster()) {}
 
 }  // namespace easy
 
