@@ -5,8 +5,14 @@
 
 int main(int argc, char* argv[]) {
     easy::Http(argc, argv) //
-      .Path("/hello", [](const easy::HttpRequest& req) {
-        req.GetHttpResponse().SetContentType(http::content_type::kTextPlain);
+      .DefaultContentType(http::content_type::kTextPlain)
+      .Route("/hello", [](const easy::HttpRequest& req) {
         return "Hello world";
+      })
+      .Route("/hello/to/{user}", [](const easy::HttpRequest& req) {
+        return "Hello, " + req.GetPathArg("user");
+      })
+      .Route("/hi", [](const easy::HttpRequest& req) {
+        return "Hi, " + req.GetArg("name");
       });
 }

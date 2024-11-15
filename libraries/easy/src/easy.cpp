@@ -50,6 +50,7 @@ constexpr std::string_view kConfigHandlerTemplate = R"~(
 
 
 std::unordered_map<std::string, Http::Callback> g_http_functions_;
+std::optional<http::ContentType> default_content_type_;
 
 }  // anonymous namespace
 
@@ -61,6 +62,9 @@ public:
     {}
 
     std::string HandleRequestThrow(const HttpRequest& request, RequestContext&) const override {
+        if (default_content_type_) {
+            request.GetHttpResponse().SetContentType(*default_content_type_);
+        }
         return callback_(request);
     }
 private:
@@ -102,7 +106,12 @@ Http::~Http() {
     }
 }
 
-Http& Http::Path(std::string_view path, Callback&& func) {
+Http& Http::DefaultContentType(http::ContentType content_type) {
+    default_content_type_ = content_type;
+    return *this;
+}
+
+Http& Http::Route(std::string_view path, Callback&& func) {
     g_http_functions_.emplace(path, std::move(func));
     component_list_.Append<Handle>(path);
     AddHandleConfig(path);

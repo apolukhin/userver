@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include <userver/components/component_list.hpp>
+#include <userver/http/content_type.hpp>
 #include <userver/server/http/http_request.hpp>
 #include <userver/server/request/request_context.hpp>
 
@@ -24,7 +25,10 @@ public:
     Http(int argc, const char *const argv[]);
     ~Http();
 
-    Http& Path(std::string_view path, Callback&& func);
+    
+    Http& DefaultContentType(http::ContentType content_type);
+
+    Http& Route(std::string_view path, Callback&& func);
 private:
     void AddHandleConfig(std::string_view path);
 
