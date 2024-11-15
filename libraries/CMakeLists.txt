@@ -1,3 +1,4 @@
+option(USERVER_FEATURE_EASY "Build easy HTTP server library" "${USERVER_LIB_ENABLED_DEFAULT}")
 option(USERVER_FEATURE_S3API "Build S3 api client library" "${USERVER_LIB_ENABLED_DEFAULT}")
 option(USERVER_FEATURE_GRPC_REFLECTION "Build grpc reflection library" "${USERVER_LIB_ENABLED_DEFAULT}")
 
