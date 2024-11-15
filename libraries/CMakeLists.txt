@@ -6,6 +6,9 @@ if (USERVER_FEATURE_S3API)
 endif()
 
 if (USERVER_FEATURE_EASY)
+  if (NOT USERVER_FEATURE_POSTGRESQL)
+    message(FATAL_ERROR "'USERVER_FEATURE_EASY' requires 'USERVER_FEATURE_POSTGRESQL=ON'")
+  endif()
   add_subdirectory(easy)
 endif()
 

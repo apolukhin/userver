@@ -1,6 +1,13 @@
 #include <userver/easy.hpp>
 
+#include <fstream>
+
+#include <boost/program_options.hpp>
+
+#include <userver/components/minimal_server_component_list.hpp>
+#include <userver/components/run.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
+#include <userver/utils/daemon_run.hpp>
 
 USERVER_NAMESPACE_BEGIN
 
@@ -41,30 +48,34 @@ constexpr std::string_view kConfigHandlerTemplate = R"~(
             task_processor: main-task-processor  # Run it on CPU bound task processor
 )~";
 
+
+std::unordered_map<std::string, Http::Callback> g_http_functions_;
+
 }
 
-class Http::Handle final : public server::handlers::HttpHandlerBase, Function {
+class Http::Handle final : public server::handlers::HttpHandlerBase {
 public:
     Handle(const components::ComponentConfig& config, const components::ComponentContext& context):
       HttpHandlerBase(config, context),
-      callback_{Http::functions_[config.Name()]}
+      callback_{g_http_functions_[config.Name()]}
     {}
 
     std::string HandleRequestThrow(const HttpRequest& request, RequestContext&) const override {
         return callback_(request);
     }
 private:
-    Callback& callback_;
+    Http::Callback& callback_;
 };
 
-Http::Http(int argc, const char *const argv[]) : argc_{argc}, argv_{argv}, static_config_{kConfigBase} {}
+Http::Http(int argc, const char *const argv[]) : argc_{argc}, argv_{argv}, static_config_{kConfigBase},
+      component_list_{components::MinimalServerComponentList()} {}
 
 Http::~Http() {
-    functions_.clear();
+    g_http_functions_.clear();
 }
 
 Http& Http::Path(std::string_view path, Callback&& func) {
-    functions_.insert(path, std::move(func));
+    g_http_functions_.emplace(path, std::move(func));
     component_list_.Append<Handle>(path);
     AddHandleConfig(path);
 
@@ -72,7 +83,32 @@ Http& Http::Path(std::string_view path, Callback&& func) {
 }
 
 int Http::Run() {
-    return utils::DaemonMain(argc_, argv_, component_list_);
+    namespace po = boost::program_options;
+
+    po::variables_map vm;
+    po::options_description desc("Easy options");
+    std::string config_dump;
+
+    // clang-format off
+    desc.add_options()
+      ("dump-config", po::value(&config_dump), "path to dump the server config")
+    ;
+    // clang-format on
+
+    po::store(po::command_line_parser(argc_, argv_).options(desc).allow_unregistered().run(), vm);
+    po::notify(vm);
+
+    if (vm.count("dump-config")) {
+        std::ofstream(config_dump) << static_config_;
+        return 0;
+    }
+    
+    if (argc_ <= 1) {
+        components::Run(components::InMemoryConfig{static_config_}, component_list_);
+        return 0;
+    } else {
+        return utils::DaemonMain(argc_, argv_, component_list_);
+    } 
 }
 
 void Http::AddHandleConfig(std::string_view path) {

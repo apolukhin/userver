@@ -1,9 +1,13 @@
 #pragma once
 
+#include <functional>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 
 #include <userver/components/component_list.hpp>
+#include <userver/server/http/http_request.hpp>
+#include <userver/server/request/request_context.hpp>
 
 USERVER_NAMESPACE_BEGIN
 
@@ -15,25 +19,24 @@ using RequestContext = server::request::RequestContext;
 
 class Http final {
 public:
-    using Callback = std::function<std::string(HttpRequest&);
+    using Callback = std::function<std::string(const HttpRequest&)>;
 
     Http(int argc, const char *const argv[]);
     ~Http();
 
     Http& Path(std::string_view path, Callback&& func);
 
-    int Run();
+    [[nodiscard]] int Run();
 
 private:
-    static std::unordered_map<std::string, Callback> functions_;
-
     void AddHandleConfig(std::string_view path);
 
     class Handle;
 
     const int argc_;
-    const char *const argv_[];
-    components::ComponentList component_list_ = MinimalServerComponentList();
+    const char *const* argv_;
+    std::string static_config_;
+    components::ComponentList component_list_;
 };
 
 }  // namespace easy
