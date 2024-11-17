@@ -3,7 +3,6 @@
 #include <functional>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 #include <userver/components/component_list.hpp>
 #include <userver/components/component_base.hpp>
@@ -31,11 +30,6 @@ public:
 namespace impl {
 
 using UnderlyingCallback = std::function<std::string(const HttpRequest&, const DependenciesBase&)>;
-
-struct AggressiveUnicorn; // Do not unleash
-
-template <class Dependency>
-using ConstDependencyRef = std::conditional_t<std::is_void_v<Dependency>, AggressiveUnicorn, Dependency> const&; 
 
 class HttpBase {
 public:
@@ -70,21 +64,7 @@ private:
 
 }
 
-template <class Dependency = void>
-class HttpWith;
-
-inline void DependenciesRegistration(HttpWith<void>&) {}
-
-template <class T>
-inline void DependenciesRegistration(HttpWith<T>&) {
-    static_assert(sizeof(T) && false, "Define `void DependenciesRegistration(HttpWith<T>& app)` "
-        "in the namespace of the your type `T` to automatically add required configurations and "
-        "components to the `app` for your dependences type `T`.  For example:"
-        "void DependenciesRegistration(HttpWith<MyDeps>& app) { app.AppendComponent<MyComponent>(); }"
-    );
-}
-
-template <class Dependency>
+template <class Dependency = DependenciesBase>
 class HttpWith final {
 public:
     class Callback {
@@ -99,10 +79,8 @@ public:
     };
 
     HttpWith(int argc, const char *const argv[]) : impl_(argc, argv) {
-        if constexpr (!std::is_void_v<Dependency>) {
-            impl_.AppendComponent<Dependency>();
-            impl_.AddComponentsConfig(std::string{Dependency::kName} + ": {}");
-        }
+        impl_.AppendComponent<Dependency>();
+        impl_.AddComponentsConfig(std::string{Dependency::kName} + ": {}");
     }
 
     ~HttpWith() {
@@ -145,12 +123,23 @@ private:
     impl::HttpBase impl_;
 };
 
+template <class T>
+inline void DependenciesRegistration(HttpWith<T>&) {
+    static_assert(sizeof(T) && false, "Define `void DependenciesRegistration(HttpWith<T>& app)` "
+        "in the namespace of the your type `T` to automatically add required configurations and "
+        "components to the `app` for your dependences type `T`.  For example:"
+        "void DependenciesRegistration(HttpWith<MyDeps>& app) { app.AppendComponent<MyComponent>(); }"
+    );
+}
+
+inline void DependenciesRegistration(HttpWith<DependenciesBase>&) {}
+
 template <class Dependency>
 template <class Function>
 HttpWith<Dependency>::Callback::Callback(Function func) {
     if constexpr (std::is_invocable_r_v<std::string, Function, const HttpRequest&, const DependenciesBase&>) {
         func_ = std::move(func);
-    } else if constexpr (std::is_invocable_r_v<std::string, Function, const HttpRequest&, impl::ConstDependencyRef<Dependency> >) {
+    } else if constexpr (std::is_invocable_r_v<std::string, Function, const HttpRequest&, const Dependency&>) {
         func_ = [f = std::move(func)](const HttpRequest& req, const DependenciesBase& deps) {
             return f(req, static_cast<const Dependency&>(deps));
         };

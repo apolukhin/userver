@@ -1,6 +1,7 @@
 #include <userver/easy.hpp>
 
 #include <fstream>
+#include <unordered_map>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -53,21 +54,6 @@ constexpr std::string_view kConfigHandlerTemplate = R"~(
     task_processor: main-task-processor  # Run it on CPU bound task processor
 )~";
 
-class EmptyDeps final : public DependenciesBase {
-    using DependenciesBase::DependenciesBase;
-};
-
-const DependenciesBase& GetDeps(const components::ComponentConfig& config, const components::ComponentContext& context) {
-    const auto* deps = context.
-    FindComponentOptional<DependenciesBase>();
-    if (deps) {
-        return *deps;
-    }
-
-    static const EmptyDeps empty{config, context};
-    return empty;
-}
-
 std::unordered_map<std::string, impl::UnderlyingCallback> g_http_functions_;
 std::optional<http::ContentType> default_content_type_;
 std::string schema_;
@@ -83,7 +69,7 @@ class HttpBase::Handle final : public server::handlers::HttpHandlerBase {
 public:
     Handle(const components::ComponentConfig& config, const components::ComponentContext& context):
       HttpHandlerBase(config, context),
-      deps_{GetDeps(config, context)},
+      deps_{context.FindComponent<DependenciesBase>()},
       callback_{g_http_functions_[config.Name()]}
     {}
 
