@@ -55,6 +55,8 @@ public:
     void AppendComponent() {
         component_list_.Append<Component>();
     }
+    
+    void Schema(std::string_view schema) { schema_ = schema; }
 private:
     void AddHandleConfig(std::string_view path);
 
@@ -63,6 +65,7 @@ private:
     const int argc_;
     const char *const* argv_;
     std::string static_config_;
+    std::string schema_;
     components::ComponentList component_list_;
 };
 
@@ -128,6 +131,11 @@ public:
         impl_.AppendComponent<Component>();
         return *this;
     }
+    
+    HttpWith& Schema(std::string_view schema) {
+        impl_.Schema(schema);
+        return *this;
+    }
 
 private:
     impl::HttpBase impl_;
@@ -140,7 +148,7 @@ HttpWith<Dependency>::Callback::Callback(Function func) {
         func_ = std::move(func);
     } else if constexpr (std::is_invocable_r_v<std::string, Function, const HttpRequest&, impl::ConstDependencyRef<Dependency> >) {
         func_ = [f = std::move(func)](const HttpRequest& req, const DependenciesBase& deps) {
-            return f(req, static_cast<Dependency&>(deps));
+            return f(req, static_cast<const Dependency&>(deps));
         };
     } else {
       static_assert(std::is_invocable_r_v<std::string, Function, const HttpRequest&>);

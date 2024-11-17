@@ -106,10 +106,12 @@ HttpBase::~HttpBase() {
     po::variables_map vm;
     po::options_description desc("Easy options");
     std::string config_dump;
+    std::string schema_dump;
 
     // clang-format off
     desc.add_options()
       ("dump-config", po::value(&config_dump), "path to dump the server config")
+      ("dump-schema", po::value(&schema_dump), "path to dump the DB schema")
     ;
     // clang-format on
 
@@ -120,7 +122,11 @@ HttpBase::~HttpBase() {
         std::ofstream(config_dump) << static_config_;
         return;
     }
-    
+
+    if (vm.count("dump-schema")) {
+        std::ofstream(schema_dump + "/0_pg.sql") << schema_;
+    }
+
     if (argc_ <= 1) {
         components::Run(components::InMemoryConfig{static_config_}, component_list_);
         return;

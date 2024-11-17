@@ -4,10 +4,7 @@ if(userver_easy_FOUND)
   return()
 endif()
 
-find_package(userver REQUIRED COMPONENTS
-    core
-    postgresql
-)
+find_package(userver REQUIRED COMPONENTS postgresql)
 
 set(userver_easy_FOUND TRUE)
 
