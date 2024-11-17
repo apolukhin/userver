@@ -29,8 +29,8 @@ int main(int argc, char* argv[]) {
             auto res = dep.pg().Execute(storages::postgres::ClusterHostType::kSlave, "SELECT value FROM key_value_table WHERE key=$1", key);
             return res[0][0].As<std::string>();
         } else {
-            dep.pg().Execute(storages::postgres::ClusterHostType::kMaster, "INSERT INTO key_value_table VALUES($1, $2) ON CONFLICT DO UPDATE", key, req.GetArg("name"));
-            return {};
+            dep.pg().Execute(storages::postgres::ClusterHostType::kMaster, "INSERT INTO key_value_table(key, value) VALUES($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", key, req.GetArg("value"));
+            return std::string{};
         }
       });
 }

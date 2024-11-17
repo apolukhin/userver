@@ -49,7 +49,7 @@ components_manager:
 constexpr std::string_view kConfigHandlerTemplate = R"~(
 {0}:
     path: {0}                  # Registering handler by URL '{0}'.
-    method: GET,POST              # It will only reply to GET (HEAD) and POST requests.
+    method: GET,PUT,POST,DELETE,PATCH
     task_processor: main-task-processor  # Run it on CPU bound task processor
 )~";
 
@@ -58,7 +58,8 @@ class EmptyDeps final : public DependenciesBase {
 };
 
 const DependenciesBase& GetDeps(const components::ComponentConfig& config, const components::ComponentContext& context) {
-    const auto* deps = context.FindComponentOptional<DependenciesBase>();
+    const auto* deps = context.
+    FindComponentOptional<DependenciesBase>();
     if (deps) {
         return *deps;
     }
@@ -69,6 +70,7 @@ const DependenciesBase& GetDeps(const components::ComponentConfig& config, const
 
 std::unordered_map<std::string, impl::UnderlyingCallback> g_http_functions_;
 std::optional<http::ContentType> default_content_type_;
+std::string schema_;
 
 }  // anonymous namespace
 
@@ -153,14 +155,20 @@ void HttpBase::AddHandleConfig(std::string_view path) {
 }
 
 void HttpBase::AddComponentsConfig(std::string_view config) {
-    static_config_ += boost::algorithm::replace_all_copy(std::string{config}, "\n", "\n        ");
+    auto conf = fmt::format("\n{}\n", config);
+    static_config_ += boost::algorithm::replace_all_copy(conf, "\n", "\n        ");
 }
 
+void HttpBase::Schema(std::string_view schema) { schema_ = schema; }
+    
 }  // namespace impl
 
 
 PgDep::PgDep(const components::ComponentConfig& config, const components::ComponentContext& context)
-: DependenciesBase{config, context}, pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster()) {}
+: DependenciesBase{config, context}, pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster())
+{
+    pg_cluster_->Execute(storages::postgres::ClusterHostType::kMaster, schema_);
+}
 
 void DependenciesRegistration(HttpWith<PgDep>& app) {
     app.AddComponentsConfig(R"~(

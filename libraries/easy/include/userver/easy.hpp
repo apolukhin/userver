@@ -56,7 +56,7 @@ public:
         component_list_.Append<Component>();
     }
     
-    void Schema(std::string_view schema) { schema_ = schema; }
+    void Schema(std::string_view schema);
 private:
     void AddHandleConfig(std::string_view path);
 
@@ -65,7 +65,6 @@ private:
     const int argc_;
     const char *const* argv_;
     std::string static_config_;
-    std::string schema_;
     components::ComponentList component_list_;
 };
 
@@ -99,7 +98,12 @@ public:
         impl::UnderlyingCallback func_;
     };
 
-    HttpWith(int argc, const char *const argv[]) : impl_(argc, argv) {}
+    HttpWith(int argc, const char *const argv[]) : impl_(argc, argv) {
+        if constexpr (!std::is_void_v<Dependency>) {
+            impl_.AppendComponent<Dependency>();
+            impl_.AddComponentsConfig(std::string{Dependency::kName} + ": {}");
+        }
+    }
 
     ~HttpWith() {
         DependenciesRegistration(*this);  // ADL is intentional
