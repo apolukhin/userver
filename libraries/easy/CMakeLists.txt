@@ -6,6 +6,6 @@ userver_module(easy
     UTEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*_test.cpp"
 )
 
-if(USERVER_IS_THE_ROOT_PROJECT)
+if(USERVER_BUILD_SAMPLES)
   add_subdirectory(samples)
 endif()
