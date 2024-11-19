@@ -3,17 +3,17 @@
 #include <fstream>
 #include <unordered_map>
 
-#include <boost/program_options.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/program_options.hpp>
 
+#include <userver/clients/dns/component.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/components/run.hpp>
-#include <userver/components/component_context.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
-#include <userver/testsuite/testsuite_support.hpp>
-#include <userver/clients/dns/component.hpp>
-#include <userver/utils/daemon_run.hpp>
 #include <userver/storages/postgres/component.hpp>
+#include <userver/testsuite/testsuite_support.hpp>
+#include <userver/utils/daemon_run.hpp>
 
 USERVER_NAMESPACE_BEGIN
 
@@ -33,62 +33,74 @@ components_manager:
     default_task_processor: main-task-processor  # Task processor in which components start.
 
     components:                       # Configuring components that were registered via component_list
-        server:
-            listener:                 # configuring the main listening socket...
-                port: 8080            # ...to listen on this port and...
-                task_processor: main-task-processor    # ...process incoming requests on this task processor.
-        logging:
-            fs-task-processor: fs-task-processor
-            loggers:
-                default:
-                    file_path: '@stderr'
-                    level: debug
-                    overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
 )~";
 
+constexpr std::string_view kConfigServerTemplate = R"~(
+server:
+    listener:                 # configuring the main listening socket...
+        port: {}            # ...to listen on this port and...
+        task_processor: main-task-processor    # ...process incoming requests on this task processor.
+)~";
+
+constexpr std::string_view kConfigLoggingTemplate = R"~(
+logging:
+    fs-task-processor: fs-task-processor
+    loggers:
+        default:
+            file_path: '@stderr'
+            level: {}
+            overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
+)~";
 
 constexpr std::string_view kConfigHandlerTemplate = R"~(
 {0}:
-    path: {0}                  # Registering handler by URL '{0}'.
-    method: GET,PUT,POST,DELETE,PATCH
+    path: {1}                  # Registering handler by URL '{1}'.
+    method: {2}
     task_processor: main-task-processor  # Run it on CPU bound task processor
 )~";
 
-std::unordered_map<std::string, impl::UnderlyingCallback> g_http_functions_;
-std::optional<http::ContentType> default_content_type_;
-std::string schema_;
+struct SharedPyaload {
+  std::unordered_map<std::string, HttpBase::Callback> http_functions;
+  std::optional<http::ContentType> default_content_type;
+  std::string schema;
+};
+
+SharedPyaload globals{};
 
 }  // anonymous namespace
 
-
 DependenciesBase::~DependenciesBase() = default;
-
-namespace impl {
 
 class HttpBase::Handle final : public server::handlers::HttpHandlerBase {
 public:
-    Handle(const components::ComponentConfig& config, const components::ComponentContext& context):
-      HttpHandlerBase(config, context),
-      deps_{context.FindComponent<DependenciesBase>()},
-      callback_{g_http_functions_[config.Name()]}
-    {}
+    Handle(const components::ComponentConfig& config, const components::ComponentContext& context)
+        : HttpHandlerBase(config, context),
+          deps_{context.FindComponent<DependenciesBase>()},
+          callback_{globals.http_functions.at(config.Name())} {}
 
-    std::string HandleRequestThrow(const HttpRequest& request, RequestContext&) const override {
-        if (default_content_type_) {
-            request.GetHttpResponse().SetContentType(*default_content_type_);
+    std::string HandleRequestThrow(const server::http::HttpRequest& request, server::request::RequestContext&)
+        const override {
+        if (globals.default_content_type) {
+            request.GetHttpResponse().SetContentType(*globals.default_content_type);
         }
         return callback_(request, deps_);
     }
 
 private:
     const DependenciesBase& deps_;
-    impl::UnderlyingCallback& callback_;
+    HttpBase::Callback& callback_;
 };
 
-HttpBase::HttpBase(int argc, const char *const argv[]) : argc_{argc}, argv_{argv}, static_config_{kConfigBase},
+HttpBase::HttpBase(int argc, const char* const argv[])
+    : argc_{argc},
+      argv_{argv},
+      static_config_{kConfigBase},
       component_list_{components::MinimalServerComponentList()} {}
 
 HttpBase::~HttpBase() {
+    AddComponentsConfig(fmt::format(kConfigServerTemplate, port_));
+    AddComponentsConfig(fmt::format(kConfigLoggingTemplate, ToString(level_)));
+
     namespace po = boost::program_options;
 
     po::variables_map vm;
@@ -112,7 +124,7 @@ HttpBase::~HttpBase() {
     }
 
     if (vm.count("dump-schema")) {
-        std::ofstream(schema_dump + "/0_pg.sql") << schema_;
+        std::ofstream(schema_dump + "/0_pg.sql") << globals.schema;
     }
 
     if (argc_ <= 1) {
@@ -126,18 +138,14 @@ HttpBase::~HttpBase() {
     }
 }
 
-void HttpBase::DefaultContentType(http::ContentType content_type) {
-    default_content_type_ = content_type;
-}
+void HttpBase::DefaultContentType(http::ContentType content_type) { globals.default_content_type = content_type; }
 
-void HttpBase::Route(std::string_view path, UnderlyingCallback&& func) {
-    g_http_functions_.emplace(path, std::move(func));
-    component_list_.Append<Handle>(path);
-    AddHandleConfig(path);
-}
+void HttpBase::Route(std::string_view path, Callback&& func, std::initializer_list<server::http::HttpMethod> methods) {
+    auto component_name = fmt::format("{}-{}", path, fmt::join(methods, ","));
 
-void HttpBase::AddHandleConfig(std::string_view path) {
-    AddComponentsConfig(fmt::format(kConfigHandlerTemplate, path));
+    globals.http_functions.emplace(component_name, std::move(func));
+    component_list_.Append<Handle>(component_name);
+    AddComponentsConfig(fmt::format(kConfigHandlerTemplate, component_name, path, fmt::join(methods, ",")));
 }
 
 void HttpBase::AddComponentsConfig(std::string_view config) {
@@ -145,18 +153,19 @@ void HttpBase::AddComponentsConfig(std::string_view config) {
     static_config_ += boost::algorithm::replace_all_copy(conf, "\n", "\n        ");
 }
 
-void HttpBase::Schema(std::string_view schema) { schema_ = schema; }
-    
-}  // namespace impl
+void HttpBase::Schema(std::string_view schema) { globals.schema = schema; }
 
+void HttpBase::Port(std::uint16_t port) { port_ = port; }
+
+void HttpBase::LogLevel(logging::Level level) { level_ = level; }
 
 PgDep::PgDep(const components::ComponentConfig& config, const components::ComponentContext& context)
-: DependenciesBase{config, context}, pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster())
-{
-    pg_cluster_->Execute(storages::postgres::ClusterHostType::kMaster, schema_);
+    : DependenciesBase{config, context},
+      pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster()) {
+    pg_cluster_->Execute(storages::postgres::ClusterHostType::kMaster, globals.schema);
 }
 
-void DependenciesRegistration(HttpWith<PgDep>& app) {
+void Registration(OfDependency<PgDep>, HttpBase& app) {
     app.AddComponentsConfig(R"~(
 postgres:
     dbconnection#env: POSTGRESQL
