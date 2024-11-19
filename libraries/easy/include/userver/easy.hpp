@@ -22,6 +22,8 @@ public:
     static constexpr std::string_view kName = "easy-dependencies";
     using components::ComponentBase::ComponentBase;
     virtual ~DependenciesBase();
+
+    static const std::string& GetSchema() noexcept;
 };
 
 template <class Dependency>

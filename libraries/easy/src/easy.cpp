@@ -71,6 +71,8 @@ SharedPyaload globals{};
 
 DependenciesBase::~DependenciesBase() = default;
 
+const std::string& DependenciesBase::GetSchema() noexcept { return globals.schema; }
+
 class HttpBase::Handle final : public server::handlers::HttpHandlerBase {
 public:
     Handle(const components::ComponentConfig& config, const components::ComponentContext& context)
@@ -162,7 +164,7 @@ void HttpBase::LogLevel(logging::Level level) { level_ = level; }
 PgDep::PgDep(const components::ComponentConfig& config, const components::ComponentContext& context)
     : DependenciesBase{config, context},
       pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster()) {
-    pg_cluster_->Execute(storages::postgres::ClusterHostType::kMaster, globals.schema);
+    pg_cluster_->Execute(storages::postgres::ClusterHostType::kMaster, GetSchema());
 }
 
 void Registration(OfDependency<PgDep>, HttpBase& app) {
