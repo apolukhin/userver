@@ -1,4 +1,4 @@
-project(userver-tool-netcat CXX)
+project(userver-tool-http-client-perf CXX)
 
 file(GLOB_RECURSE SOURCES *.cpp)
 

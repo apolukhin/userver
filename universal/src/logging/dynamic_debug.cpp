@@ -85,6 +85,14 @@ void RemoveDynamicDebugLog(const std::string& location_relative, int line) {
     }
 }
 
+void RemoveAllDynamicDebugLog() {
+    utils::impl::AssertStaticRegistrationFinished();
+    auto& all_locations = GetAllLocations();
+    for (auto& location : all_locations) {
+        location.state.store(EntryState{});
+    }
+}
+
 const LogEntryContentSet& GetDynamicDebugLocations() {
     utils::impl::AssertStaticRegistrationFinished();
     return GetAllLocations();

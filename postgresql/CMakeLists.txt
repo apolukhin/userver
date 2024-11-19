@@ -59,7 +59,7 @@ _userver_directory_install(COMPONENT postgres
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/userver/scripts"
 )
 
-if (USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_BUILD_TESTS)
   add_subdirectory(functional_tests)
 endif()
 

@@ -14,20 +14,30 @@ cd userver
 
 2. Install the @ref scripts/docs/en/userver/build/dependencies.md "build dependencies"
 
-3. Build the userver:
+Alternatively you could use a docker container with all the building dependencies
+installed from @ref docker_with_ubuntu_22_04 "Docker".
+
+3. Build userver:
 
 ```bash
-mkdir build_release
-cd build_release
-cmake -DCMAKE_BUILD_TYPE=Release ..  # Adjust with flags from "Configure and Build" section
+mkdir build_debug
+cd build_debug
+# Adjust with flags from "Platform-specific build dependencies" section
+cmake -S .. \
+    -DCMAKE_C_COMPILER=clang-16 \
+    -DCMAKE_CXX_COMPILER=clang++-16 \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCPM_SOURCE_CACHE=~/cpm \
+    -DUSERVER_BUILD_ALL_COMPONENTS=1 \
+    -DUSERVER_BUILD_SAMPLES=1 \
+    -DUSERVER_BUILD_TESTS=1
 cmake --build . -j$(nproc)
 ```
 
+@see @ref cmake_options
+
 4. Run tests via `ulimit -n 4096 && ctest -V`
 
-
-Alternatively you could use a docker container with all the building dependencies
-installed from @ref scripts/docs/en/userver/build/dependencies.md "build dependencies"
 
 If you need to edit or make your own docker image with custom configuration, read about
 it at @ref scripts/docker/Readme.md.

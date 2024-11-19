@@ -22,6 +22,7 @@ class TaskCounter final {
 public:
     class Token;
     class CoroToken;
+    class RunningToken;
 
     explicit TaskCounter(std::size_t thread_count);
 
@@ -62,13 +63,11 @@ public:
 
     Rate GetTasksNoOverloadSensor() const noexcept;
 
-    Rate GetTaskSwitchFast() const noexcept;
-
-    Rate GetTaskSwitchSlow() const noexcept;
-
     Rate GetSpuriousWakeups() const noexcept;
 
-    Rate GetRunningTasks() const noexcept;
+    Rate GetTasksStartedRunning() const noexcept;
+
+    std::uint64_t GetRunningTasks() const noexcept;
 
     void AccountTaskCancel() noexcept;
 
@@ -80,15 +79,7 @@ public:
 
     void AccountTaskNoOverloadSensor() noexcept;
 
-    void AccountTaskSwitchFast() noexcept;
-
-    void AccountTaskSwitchSlow() noexcept;
-
     void AccountSpuriousWakeup() noexcept;
-
-    void AccountTaskIsRunning() noexcept;
-
-    void AccountTaskIsNotRunning() noexcept;
 
 private:
     // Counters that may be mutated from outside the bound TaskProcessor.
@@ -104,12 +95,11 @@ private:
         kStarted,
         kStopped,
         kCancelled,
-        kSwitchFast,
-        kSwitchSlow,
         kSpuriousWakeups,
         kOverloadSensor,
         kNoOverloadSensor,
-        kRunning,
+        kStartedRunning,
+        kStoppedRunning,
 
         kCountersSize,
     };
@@ -130,8 +120,6 @@ private:
     void Increment(LocalCounterId) noexcept;
 
     void Increment(GlobalCounterId) noexcept;
-
-    void Decrement(LocalCounterId) noexcept;
 
     GlobalCounterPack global_counters_;
     utils::FixedArray<LocalCounterPack> local_counters_;
@@ -163,6 +151,18 @@ public:
 
 private:
     TaskCounter* counter_;
+};
+
+class TaskCounter::RunningToken final {
+public:
+    explicit RunningToken(impl::TaskCounter& counter) noexcept;
+
+    RunningToken(RunningToken&& other) noexcept;
+    RunningToken& operator=(RunningToken&& rhs) noexcept;
+    ~RunningToken();
+
+private:
+    TaskCounter& counter_;
 };
 
 void SetLocalTaskCounterData(TaskCounter& counter, std::size_t thread_id);

@@ -23,12 +23,12 @@ UTEST(TaskCounter, Works) {
     EXPECT_EQ(counter.GetCancelledTasksOverload(), 0);
     EXPECT_EQ(counter.GetTasksOverload(), 0);
     EXPECT_EQ(counter.GetTasksOverloadSensor(), 0);
-    // When a task runs for the first time, it accounts as a task switch as well.
-    EXPECT_EQ(counter.GetTaskSwitchSlow(), 1);
+    EXPECT_EQ(counter.GetTasksStartedRunning(), 1);
+    EXPECT_EQ(counter.GetRunningTasks(), 1);
 
     engine::Yield();
 
-    EXPECT_EQ(counter.GetTaskSwitchSlow(), 2);
+    EXPECT_EQ(counter.GetTasksStartedRunning(), 2);
 
     auto task = engine::CriticalAsyncNoSpan([] { engine::InterruptibleSleepFor(utest::kMaxTestWaitTime); });
 
@@ -47,7 +47,8 @@ UTEST(TaskCounter, Works) {
     EXPECT_EQ(counter.GetTasksOverload(), 0);
     EXPECT_EQ(counter.GetTasksOverloadSensor(), 0);
     // `task` had to sleep before finishing.
-    EXPECT_EQ(counter.GetTaskSwitchSlow(), 4);
+    EXPECT_EQ(counter.GetTasksStartedRunning(), 4);
+    EXPECT_EQ(counter.GetRunningTasks(), 1);
 
     // Despite being cancelled, the task has had a chance to run and return normally (guaranteed due to Critical).
     UEXPECT_NO_THROW(task.Get());
@@ -56,7 +57,8 @@ UTEST(TaskCounter, Works) {
     EXPECT_EQ(counter.GetCreatedTasks(), 2);
     EXPECT_EQ(counter.GetDestroyedTasks(), 1);
     EXPECT_EQ(counter.GetCancelledTasks(), 1);
-    EXPECT_EQ(counter.GetTaskSwitchSlow(), 4);
+    EXPECT_EQ(counter.GetTasksStartedRunning(), 4);
+    EXPECT_EQ(counter.GetRunningTasks(), 1);
 }
 
 USERVER_NAMESPACE_END

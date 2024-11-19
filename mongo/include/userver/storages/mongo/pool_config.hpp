@@ -58,7 +58,7 @@ struct PoolConfig final {
     };
 
     /// Default connection timeout
-    static constexpr auto kDefaultConnTimeout = std::chrono::seconds{2};
+    static constexpr auto kDefaultConnTimeout = std::chrono::milliseconds{100};
     /// Default socket timeout
     static constexpr auto kDefaultSoTimeout = std::chrono::seconds{10};
     /// Default connection queue timeout

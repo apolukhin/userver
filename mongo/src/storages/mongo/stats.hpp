@@ -123,6 +123,8 @@ struct HeartbeatsStatistics final {
     Counter success;
     Counter failed;
     Counter start;
+
+    std::chrono::steady_clock::time_point hb_started{};
 };
 
 // See

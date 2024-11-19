@@ -109,6 +109,7 @@ target_link_libraries(${PROJECT_NAME} userver::grpc)
 ```
 
 @see @ref userver_libraries
+@see @ref cmake_options
 
 See @ref tutorial_services for minimal usage examples of various userver libraries.
 
@@ -207,6 +208,8 @@ cmake --install build_debug/
 cmake --install build_release/
 ```
 
+@see @ref cmake_options
+
 
 ### Use userver in your projects
 
@@ -245,11 +248,11 @@ target_link_libraries(${PROJECT_NAME}-mysql_objs PUBLIC userver::mysql mariadbcl
 The Docker images provide a container with all the build dependencies preinstalled and 
 with a proper setup of PPAs with databases, compilers and tools:
 
-Image reference                                              | Contains                               |
------------------------------------------------------------- | -------------------------------------- |
-`ghcr.io/userver-framework/ubuntu-22.04-userver-pg:latest`   | PostgreSQL and userver preinstalled    |
-`ghcr.io/userver-framework/ubuntu-22.04-userver:latest`      | userver preinstalled                   |
-`ghcr.io/userver-framework/ubuntu-22.04-userver-base:latest` | only userver dependencies preinstalled |
+| Image reference                                              | Contains                               |
+|--------------------------------------------------------------|----------------------------------------|
+| `ghcr.io/userver-framework/ubuntu-22.04-userver-pg:latest`   | PostgreSQL and userver preinstalled    |
+| `ghcr.io/userver-framework/ubuntu-22.04-userver:latest`      | userver preinstalled                   |
+| `ghcr.io/userver-framework/ubuntu-22.04-userver-base:latest` | only userver dependencies preinstalled |
 
 To run it just use a command like
 
@@ -337,6 +340,8 @@ You can use PGO compilation doing the following steps:
 4) configure userver AND your service with cmake option -DUSERVER_PGO_USE=<path_to_profdata>, compile the service.
 
 The resulting binary should be 2-15% faster than without PGO, depending on the code and workload.
+
+@see @ref cmake_options
 
 ----------
 

@@ -106,7 +106,7 @@ function(userver_module MODULE)
   endif()
 
   ## 2. userver-${MODULE}-unittest
-  if(USERVER_IS_THE_ROOT_PROJECT AND UTEST_SOURCES)
+  if(USERVER_BUILD_TESTS AND UTEST_SOURCES)
     add_executable(userver-${MODULE}-unittest ${UTEST_SOURCES})
     target_link_libraries(userver-${MODULE}-unittest PRIVATE
         userver-utest
@@ -121,7 +121,7 @@ function(userver_module MODULE)
   endif()
 
   ## 3. userver-${MODULE}-dbtest
-  if(USERVER_IS_THE_ROOT_PROJECT AND DBTEST_SOURCES)
+  if(USERVER_BUILD_TESTS AND DBTEST_SOURCES)
     add_executable(userver-${MODULE}-dbtest ${DBTEST_SOURCES})
     target_link_libraries(userver-${MODULE}-dbtest PRIVATE
         userver-utest
@@ -140,7 +140,7 @@ function(userver_module MODULE)
   endif()
 
   ## 4. userver-${MODULE}-benchmark
-  if(USERVER_IS_THE_ROOT_PROJECT AND UBENCH_SOURCES)
+  if(USERVER_BUILD_TESTS AND UBENCH_SOURCES)
     add_executable(userver-${MODULE}-benchmark ${UBENCH_SOURCES})
     target_link_libraries(userver-${MODULE}-benchmark PRIVATE
         userver-ubench

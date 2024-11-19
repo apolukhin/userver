@@ -229,7 +229,7 @@ target_include_directories(${PROJECT_NAME}
 # Must go below all the target options and definitions.
 _check_compile_flags(${PROJECT_NAME})
 
-if (USERVER_IS_THE_ROOT_PROJECT OR USERVER_FEATURE_UTEST)
+if (USERVER_FEATURE_UTEST)
   add_library(userver-core-internal OBJECT ${INTERNAL_SOURCES})
   target_compile_definitions(userver-core-internal PUBLIC $<TARGET_PROPERTY:${PROJECT_NAME},COMPILE_DEFINITIONS>)
   target_include_directories(userver-core-internal PUBLIC
@@ -250,11 +250,11 @@ if (USERVER_IS_THE_ROOT_PROJECT OR USERVER_FEATURE_UTEST)
   _userver_install_targets(COMPONENT core TARGETS userver-core-internal)
 endif()
 
-if (USERVER_FEATURE_UTEST OR USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_FEATURE_UTEST)
   add_subdirectory(utest)
 endif()
 
-if (USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_BUILD_TESTS)
     add_executable(${PROJECT_NAME}-unittest ${UNIT_TEST_SOURCES})
     target_include_directories (${PROJECT_NAME}-unittest PRIVATE
         $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>
@@ -268,7 +268,7 @@ if (USERVER_IS_THE_ROOT_PROJECT)
     add_subdirectory(functional_tests)
 endif()
 
-if (USERVER_FEATURE_UTEST OR USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_FEATURE_UTEST)
     add_library(userver-ubench ${LIBUBENCH_SOURCES})
     target_include_directories(userver-ubench PUBLIC $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>)
     target_compile_definitions(userver-ubench PUBLIC $<TARGET_PROPERTY:${PROJECT_NAME},COMPILE_DEFINITIONS>)
@@ -282,7 +282,7 @@ if (USERVER_FEATURE_UTEST OR USERVER_IS_THE_ROOT_PROJECT)
     _userver_install_targets(COMPONENT core TARGETS userver-ubench userver-universal-internal-ubench)
 endif()
 
-if (USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_BUILD_TESTS)
     add_executable(${PROJECT_NAME}-benchmark ${BENCH_SOURCES})
 
     target_link_libraries(${PROJECT_NAME}-benchmark

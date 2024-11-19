@@ -47,10 +47,10 @@ function(userver_add_sql_library TARGET)
   add_custom_command(
     OUTPUT 
         ${ARG_OUTPUT_DIR}/include/${ARG_NAMESPACE}/${FILENAME}.hpp
-	${ARG_OUTPUT_DIR}/src/${ARG_NAMESPACE}/${FILENAME}.cpp
+        ${ARG_OUTPUT_DIR}/src/${ARG_NAMESPACE}/${FILENAME}.cpp
     COMMAND
         ${USERVER_SQL_PYTHON_BINARY}
-	${USERVER_SQL_SCRIPTS_PATH}/generator.py
+	      ${USERVER_SQL_SCRIPTS_PATH}/generator.py
         --namespace ${ARG_NAMESPACE}
         --output-dir ${ARG_OUTPUT_DIR}
         --query-log-mode ${ARG_QUERY_LOG_MODE}

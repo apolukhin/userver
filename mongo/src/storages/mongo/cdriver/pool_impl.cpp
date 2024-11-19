@@ -29,6 +29,8 @@ USERVER_NAMESPACE_BEGIN
 namespace storages::mongo::impl::cdriver {
 namespace {
 
+using RealMilliseconds = std::chrono::duration<double, std::milli>;
+
 [[maybe_unused]] void MongocCoroFrieldlyUsleep(int64_t usec, void*) noexcept {
     UASSERT(usec >= 0);
     if (engine::current_task::IsTaskProcessorThread()) {
@@ -171,6 +173,17 @@ void HeartbeatStarted(const mongoc_apm_server_heartbeat_started_t* event) {
     auto& stats = GetStats(mongoc_apm_server_heartbeat_started_get_context(event));
     ++stats.apm_stats_->heartbeats.start;
     LOG_LIMITED_DEBUG() << mongoc_apm_server_heartbeat_started_get_host(event)->host_and_port << " heartbeat started";
+    stats.apm_stats_->heartbeats.hb_started = std::chrono::steady_clock::now();
+}
+
+void HeartbeatFinished(stats::ConnStats& stats) {
+    auto* span = tracing::Span::CurrentSpanUnchecked();
+    if (span) {
+        auto diff = std::chrono::duration_cast<RealMilliseconds>(
+            std::chrono::steady_clock::now() - stats.apm_stats_->heartbeats.hb_started
+        );
+        span->AddTag("heartbeat_time", diff.count());
+    }
 }
 
 void HeartbeatSuccess(const mongoc_apm_server_heartbeat_succeeded_t* event) {
@@ -178,12 +191,14 @@ void HeartbeatSuccess(const mongoc_apm_server_heartbeat_succeeded_t* event) {
     ++stats.apm_stats_->heartbeats.success;
     LOG_LIMITED_DEBUG() << mongoc_apm_server_heartbeat_succeeded_get_host(event)->host_and_port
                         << " heartbeat succeeded";
+    HeartbeatFinished(stats);
 }
 
 void HeartbeatFailed(const mongoc_apm_server_heartbeat_failed_t* event) {
     auto& stats = GetStats(mongoc_apm_server_heartbeat_failed_get_context(event));
     ++stats.apm_stats_->heartbeats.failed;
     LOG_LIMITED_WARNING() << mongoc_apm_server_heartbeat_failed_get_host(event)->host_and_port << " heartbeat failed";
+    HeartbeatFinished(stats);
 }
 
 std::string CreateTopologyChangeMessage(const mongoc_apm_topology_changed_t* event) {

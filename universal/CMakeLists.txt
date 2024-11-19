@@ -307,7 +307,7 @@ _userver_directory_install(COMPONENT universal
 )
 _userver_install_targets(COMPONENT universal TARGETS ${PROJECT_NAME})
 
-if (USERVER_IS_THE_ROOT_PROJECT OR USERVER_FEATURE_UTEST)
+if (USERVER_FEATURE_UTEST)
   add_subdirectory(utest)
 
   add_library(${PROJECT_NAME}-internal-ubench INTERFACE)
@@ -323,7 +323,7 @@ if (USERVER_IS_THE_ROOT_PROJECT OR USERVER_FEATURE_UTEST)
   )
 endif()
 
-if (USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_BUILD_TESTS)
     add_library(${PROJECT_NAME}-internal OBJECT ${INTERNAL_SOURCES})
     target_compile_definitions(${PROJECT_NAME}-internal PUBLIC
         $<TARGET_PROPERTY:${PROJECT_NAME},COMPILE_DEFINITIONS>

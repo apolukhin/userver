@@ -22,9 +22,12 @@ jobs:
                         -GNinja
                         -DCMAKE_CXX_COMPILER=clang++-18
                         -DCMAKE_C_COMPILER=clang-18
-                        -DUSERVER_SANITIZE="ub addr"
                         -DCMAKE_BUILD_TYPE=Debug
-                        -DUSERVER_NO_WERROR=OFF
+                        -DUSERVER_SANITIZE="ub addr"
+                        -DUSERVER_NO_WERROR=0
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
                         -DUSERVER_NAMESPACE=userver_ns
                         -DUSERVER_NAMESPACE_BEGIN="namespace userver_ns { inline namespace
                         v1 {"
@@ -40,9 +43,12 @@ jobs:
                         -GNinja
                         -DCMAKE_CXX_COMPILER=clang++-14
                         -DCMAKE_C_COMPILER=clang-14
-                        -DUSERVER_SANITIZE="ub addr"
                         -DCMAKE_BUILD_TYPE=Debug
-                        -DUSERVER_NO_WERROR=OFF
+                        -DUSERVER_SANITIZE="ub addr"
+                        -DUSERVER_NO_WERROR=0
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
                         -DUSERVER_NAMESPACE=userver_ns
                         -DUSERVER_NAMESPACE_BEGIN="namespace userver_ns { inline namespace
                         v1 {"
@@ -56,12 +62,15 @@ jobs:
 
                   - cmake-flags: >-
                         -GNinja
+                        -DCMAKE_BUILD_TYPE=Release
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
+                        -DUSERVER_NO_WERROR=1
                         -DUSERVER_FEATURE_CRYPTOPP_BLAKE2=0
                         -DUSERVER_FEATURE_REDIS_HI_MALLOC=1
-                        -DUSERVER_NO_WERROR=1
                         -DUSERVER_FORCE_DOWNLOAD_ABSEIL=0
                         -DUSERVER_DOWNLOAD_PACKAGE_ABSEIL=0
-                        -DCMAKE_BUILD_TYPE=Release
                     os: ubuntu-20.04
                     info: g++-9 + release
                     tests-flags: '--gtest_filter=-HttpClient.RedirectHeaders:HttpClient.TestUseIPv4v6'
@@ -72,12 +81,15 @@ jobs:
                         -GNinja
                         -DCMAKE_CXX_COMPILER=g++-8
                         -DCMAKE_C_COMPILER=gcc-8
+                        -DCMAKE_BUILD_TYPE=Debug
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
+                        -DUSERVER_NO_WERROR=1
                         -DUSERVER_FEATURE_CRYPTOPP_BLAKE2=0
                         -DUSERVER_FEATURE_REDIS_HI_MALLOC=1
-                        -DUSERVER_NO_WERROR=1
                         -DUSERVER_FORCE_DOWNLOAD_ABSEIL=0
                         -DUSERVER_DOWNLOAD_PACKAGE_ABSEIL=0
-                        -DCMAKE_BUILD_TYPE=Debug
                     os: ubuntu-20.04
                     info: g++-8 + debug
                     tests-flags: '--gtest_filter=-HttpClient.RedirectHeaders:HttpClient.TestUseIPv4v6'

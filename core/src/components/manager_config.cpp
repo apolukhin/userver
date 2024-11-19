@@ -221,6 +221,13 @@ properties:
         additionalProperties:
             type: boolean
             description: whether a specific experiment is enabled
+    graceful_shutdown_interval:
+        type: string
+        description: |
+            At shutdown, first hang for this duration with /ping 5xx to give
+            the balancer a chance to redirect new requests to other hosts and
+            to give the service a chance to finish handling old requests.
+        defaultDescription: 0s
 )");
 }
 
@@ -251,6 +258,9 @@ ManagerConfig Parse(const yaml_config::YamlConfig& value, formats::parse::To<Man
     config.disable_phdr_cache = value["disable_phdr_cache"].As<bool>(config.disable_phdr_cache);
     config.preheat_stacktrace_collector =
         value["preheat_stacktrace_collector"].As<bool>(config.preheat_stacktrace_collector);
+    config.graceful_shutdown_interval =
+        value["graceful_shutdown_interval"].As<std::chrono::milliseconds>(config.graceful_shutdown_interval);
+
     return config;
 }
 

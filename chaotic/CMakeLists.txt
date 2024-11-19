@@ -14,7 +14,7 @@ target_include_directories(
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC userver-universal)
 
-if(USERVER_IS_THE_ROOT_PROJECT)
+if(USERVER_BUILD_TESTS)
   userver_venv_setup(
       NAME userver-chaotic-tests
       PYTHON_OUTPUT_VAR USERVER_CHAOTIC_PYTEST_PYTHON_BINARY

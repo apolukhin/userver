@@ -7,6 +7,7 @@
 
 #include <userver/compiler/demangle.hpp>
 #include <userver/concurrent/variable.hpp>
+#include <userver/engine/sleep.hpp>
 #include <userver/engine/task/task_with_result.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/tracing/tracer.hpp>
@@ -16,6 +17,7 @@
 #include <components/component_context_component_info.hpp>
 #include <components/impl/component_name_from_info.hpp>
 #include <components/manager.hpp>
+#include <components/manager_config.hpp>
 #include <engine/task/task_context.hpp>
 
 USERVER_NAMESPACE_BEGIN
@@ -136,6 +138,16 @@ void ComponentContextImpl::OnAllComponentsLoaded() {
     );
 }
 
+void ComponentContextImpl::OnGracefulShutdownStarted() {
+    shutdown_started_ = true;
+
+    const auto interval = manager_.GetConfig().graceful_shutdown_interval;
+    if (interval > std::chrono::milliseconds{0}) {
+        LOG_INFO() << "Shutdown started, notifying ping handlers and delaying by " << interval;
+        engine::SleepFor(interval);
+    }
+}
+
 void ComponentContextImpl::OnAllComponentsAreStopping() {
     LOG_INFO() << "Sending stopping notification to all components";
     ProcessAllComponentLifetimeStageSwitchings(
@@ -207,6 +219,11 @@ bool ComponentContextImpl::IsAnyComponentInFatalState() const {
                 LOG_DEBUG() << "Component '" << name << "' is in kOk state";
                 break;
         }
+    }
+
+    if (shutdown_started_) {
+        LOG_WARNING() << "Service is shutting down, returning 5xx from ping";
+        return true;
     }
 
     return false;

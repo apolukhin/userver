@@ -8,6 +8,9 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-basic-chaos)
 add_subdirectory(dynamic_configs)
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-dynamic-configs)
 
+add_subdirectory(graceful_shutdown)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-graceful-shutdown)
+
 add_subdirectory(https)
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-https)
 

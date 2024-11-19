@@ -16,11 +16,22 @@ async def wait_for_daemon_stop(_global_daemon_store):
     await _global_daemon_store.aclose()
 
 
-async def test_restart(monitor_client, service_client, _global_daemon_store):
-    response = await monitor_client.get('/restart', params={'delay': '1'})
+async def test_graceful_shutdown_timer(
+    service_client, monitor_client, _global_daemon_store,
+):
+    response = await service_client.get('/ping')
+    assert response.status == 200
+
+    response = await monitor_client.post('/sigterm')
     assert response.status == 200
 
     response = await service_client.get('/ping')
     assert response.status == 500
 
+    await asyncio.sleep(2)
+    # Check that the service is still alive.
+    response = await service_client.get('/ping')
+    assert response.status == 500
+
+    # After a couple more seconds, the service will start shutting down.
     await wait_for_daemon_stop(_global_daemon_store)

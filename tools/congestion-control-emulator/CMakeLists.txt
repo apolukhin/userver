@@ -1,4 +1,4 @@
-project(userver-tool-netcat CXX)
+project(userver-tool-congestion-control-emulator CXX)
 
 file(GLOB_RECURSE SOURCES *.cpp)
 

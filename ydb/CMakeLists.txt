@@ -34,6 +34,6 @@ _userver_directory_install(COMPONENT ydb
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/userver"
 )
 
-if (USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_BUILD_TESTS)
   add_subdirectory(functional_tests)
 endif()

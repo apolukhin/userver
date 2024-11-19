@@ -157,7 +157,7 @@ if (USERVER_FEATURE_UTEST)
   )
 endif()
 
-if (USERVER_IS_THE_ROOT_PROJECT)
+if (USERVER_BUILD_TESTS)
   userver_add_grpc_library(${PROJECT_NAME}-unittest-proto
       PROTOS
       # Absolute paths are allowed

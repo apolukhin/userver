@@ -191,7 +191,6 @@ class UserverConan(ConanFile):
         tool_ch.variables['CMAKE_FIND_DEBUG_MODE'] = False
 
         tool_ch.variables['USERVER_CONAN'] = True
-        tool_ch.variables['USERVER_IS_THE_ROOT_PROJECT'] = False
         tool_ch.variables['USERVER_DOWNLOAD_PACKAGES'] = True
         tool_ch.variables['USERVER_FEATURE_DWCAS'] = True
         tool_ch.variables['USERVER_NAMESPACE'] = self.options.namespace
@@ -642,12 +641,7 @@ class UserverConan(ConanFile):
         return userver_components
 
     def package_info(self):
-        debug = (
-            'd'
-            if self.settings.build_type == 'Debug'
-            and self.settings.os == 'Windows'
-            else ''
-        )
+        debug = 'd' if self.settings.build_type == 'Debug' else ''
 
         def get_lib_name(module):
             return f'userver-{module}{debug}'

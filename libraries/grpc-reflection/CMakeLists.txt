@@ -10,6 +10,6 @@ userver_module(grpc-reflection
     UTEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*_test.cpp"
 )
 
-if(USERVER_IS_THE_ROOT_PROJECT)
+if(USERVER_BUILD_TESTS)
   add_subdirectory(functional_tests)
 endif()

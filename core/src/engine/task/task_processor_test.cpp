@@ -51,11 +51,6 @@ UTEST(TaskProcessor, Overload) {
 UTEST_MT(TaskProcessor, MetricsAliveAndRunning, 2) {
     auto& task_counter = engine::current_task::GetTaskProcessor().GetTaskCounter();
 
-    // Wait until the starter task is idle
-    while (task_counter.GetRunningTasks() != 1) {
-        engine::SleepFor(std::chrono::milliseconds(1));
-    }
-
     EXPECT_EQ(task_counter.GetRunningTasks(), 1);
 
     std::atomic<bool> ready{false};

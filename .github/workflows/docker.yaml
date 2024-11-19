@@ -15,38 +15,56 @@ jobs:
             matrix:
                 include:
                   - cmake-flags: >-
-                        -DUSERVER_BUILD_ALL_LIBRARIES=0
+                        -DCMAKE_CXX_STANDARD=17
+                        -DUSERVER_NO_WERROR=0
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
                         -DUSERVER_FEATURE_CORE=1
                         -DUSERVER_FEATURE_CHAOTIC=0
-                        -DCMAKE_CXX_STANDARD=17
                     image: ubuntu-22.04-userver-base
                     info: ubuntu + clang + cxx17 + core
                     id: ubuntu_clang_cxx17_core
                   - cmake-flags: >-
-                        -DCMAKE_CXX_COMPILER=clang++-16 -DCMAKE_C_COMPILER=clang-16
-                        -DUSERVER_BUILD_ALL_LIBRARIES=1
+                        -DCMAKE_C_COMPILER=clang-16
+                        -DCMAKE_CXX_COMPILER=clang++-16
                         -DCMAKE_CXX_STANDARD=17
+                        -DUSERVER_NO_WERROR=0
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
                     image: ubuntu-22.04-userver-base-ci
                     info: ubuntu + clang + cxx17
                     id: ubuntu_clang_cxx17
                   - cmake-flags: >-
-                        -DCMAKE_CXX_COMPILER=g++-11 -DCMAKE_C_COMPILER=gcc-11
-                        -DUSERVER_BUILD_ALL_LIBRARIES=1
+                        -DCMAKE_C_COMPILER=gcc-11
+                        -DCMAKE_CXX_COMPILER=g++-11
                         -DCMAKE_CXX_STANDARD=17
+                        -DUSERVER_NO_WERROR=0
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
                     image: ubuntu-22.04-userver-base-ci
                     info: ubuntu + gcc + cxx17
                     id: ubuntu_gcc_cxx17
                   - cmake-flags: >-
-                        -DCMAKE_CXX_COMPILER=clang++-16 -DCMAKE_C_COMPILER=clang-16
-                        -DUSERVER_BUILD_ALL_LIBRARIES=1
+                        -DCMAKE_C_COMPILER=clang-16
+                        -DCMAKE_CXX_COMPILER=clang++-16
                         -DCMAKE_CXX_STANDARD=20
+                        -DUSERVER_NO_WERROR=0
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
                     image: ubuntu-22.04-userver-base-ci
                     info: ubuntu + clang + cxx20
                     id: ubuntu_clang_cxx20
                   - cmake-flags: >-
-                        -DCMAKE_CXX_COMPILER=g++-11 -DCMAKE_C_COMPILER=gcc-11
-                        -DUSERVER_BUILD_ALL_LIBRARIES=1
+                        -DCMAKE_C_COMPILER=gcc-11
+                        -DCMAKE_CXX_COMPILER=g++-11
                         -DCMAKE_CXX_STANDARD=20
+                        -DUSERVER_NO_WERROR=0
+                        -DUSERVER_BUILD_ALL_COMPONENTS=1
+                        -DUSERVER_BUILD_SAMPLES=1
+                        -DUSERVER_BUILD_TESTS=1
                     image: ubuntu-22.04-userver-base-ci
                     info: ubuntu + gcc + cxx20
                     id: ubuntu_gcc_cxx20

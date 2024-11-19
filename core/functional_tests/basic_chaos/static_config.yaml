@@ -50,6 +50,11 @@ components_manager:
             method: POST
             task_processor: monitor-task-processor
 
+        handler-dynamic-debug-log:
+            path: /log/dynamic-debug
+            method: GET,PUT,DELETE
+            task_processor: monitor-task-processor
+
         testsuite-support:
 
         http-client:

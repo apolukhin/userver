@@ -512,6 +512,8 @@ def userver_config_testsuite(pytestconfig, mockserver_info):
         testsuite_support['testsuite-periodic-update-enabled'] = False
 
     def patch_config(config, config_vars) -> None:
+        # Don't delay tests teardown unnecessarily.
+        config['components_manager'].pop('graceful_shutdown_interval', None)
         components: dict = config['components_manager']['components']
         if 'testsuite-support' not in components:
             return
