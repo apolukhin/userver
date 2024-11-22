@@ -10,3 +10,6 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-hi)
 
 add_subdirectory(2_key_value)
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-key-value)
+
+add_subdirectory(3_custom_dependency)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-custom-dependency)

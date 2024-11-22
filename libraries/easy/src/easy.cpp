@@ -60,9 +60,9 @@ constexpr std::string_view kConfigHandlerTemplate = R"~(
 )~";
 
 struct SharedPyaload {
-  std::unordered_map<std::string, HttpBase::Callback> http_functions;
-  std::optional<http::ContentType> default_content_type;
-  std::string schema;
+    std::unordered_map<std::string, HttpBase::Callback> http_functions;
+    std::optional<http::ContentType> default_content_type;
+    std::string schema;
 };
 
 SharedPyaload globals{};
