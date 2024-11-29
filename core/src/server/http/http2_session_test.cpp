@@ -26,8 +26,8 @@ namespace {
 
 using MockHttpRequest = utest::SimpleServer::Request;
 using MockHttpResponse = utest::SimpleServer::Response;
-using ParsedRequestPtr = std::shared_ptr<request::RequestBase>;
-using ParsedRequestImplPtr = std::shared_ptr<HttpRequestImpl>;
+using ParsedRequestPtr = std::shared_ptr<http::HttpRequest>;
+using ParsedRequestImplPtr = std::shared_ptr<HttpRequest>;
 using RequestsQueue = concurrent::SpscQueue<ParsedRequestImplPtr>;
 
 }  // namespace
@@ -68,16 +68,15 @@ public:
 
 private:
     void NewRequestCallback(ParsedRequestPtr&& request) {
-        auto request_impl = std::dynamic_pointer_cast<HttpRequestImpl>(request);
-        if (const auto& h = request_impl->GetHeader(USERVER_NAMESPACE::http::headers::k2::kHttp2SettingsHeader);
+        if (const auto& h = request->GetHeader(USERVER_NAMESPACE::http::headers::k2::kHttp2SettingsHeader);
             !h.empty()) {
             is_upgrade_http_ = true;
             dynamic_cast<Http2Session*>(parser_.get())->UpgradeToHttp2(h);
             return;
         }
-        UASSERT(request->GetResponse().GetStreamId().has_value());
-        cur_stream_id_ = *request->GetResponse().GetStreamId();
-        EXPECT_TRUE(producer_.Push(std::move(request_impl)));
+        UASSERT(request->GetHttpResponse().GetStreamId().has_value());
+        cur_stream_id_ = *request->GetHttpResponse().GetStreamId();
+        EXPECT_TRUE(producer_.Push(std::move(request)));
     }
 
     void ParseHttp2Request(const MockHttpRequest& request) {

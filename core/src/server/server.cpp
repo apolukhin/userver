@@ -11,7 +11,6 @@
 #include <engine/task/task_processor.hpp>
 #include <server/handlers/http_handler_base_statistics.hpp>
 #include <server/http/http_request_handler.hpp>
-#include <server/http/http_request_impl.hpp>
 #include <server/net/endpoint_info.hpp>
 #include <server/net/listener.hpp>
 #include <server/net/stats.hpp>
@@ -19,6 +18,7 @@
 #include <server/requests_view.hpp>
 #include <server/server_config.hpp>
 #include <userver/fs/blocking/read.hpp>
+#include <userver/server/http/http_request.hpp>
 #include <userver/server/middlewares/configuration.hpp>
 
 USERVER_NAMESPACE_BEGIN
@@ -182,7 +182,7 @@ void ServerImpl::StartPortInfos() {
     if (has_requests_view_watchers_.load()) {
         auto queue = requests_view_.GetQueue();
         requests_view_.StartBackgroundWorker();
-        auto hook = [queue](std::shared_ptr<request::RequestBase> request) { queue->enqueue(request); };
+        auto hook = [queue](std::shared_ptr<http::HttpRequest> request) mutable { queue->enqueue(std::move(request)); };
         main_port_info_.request_handler_->SetNewRequestHook(hook);
         if (monitor_port_info_.request_handler_) {
             monitor_port_info_.request_handler_->SetNewRequestHook(hook);

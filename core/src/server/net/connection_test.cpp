@@ -3,12 +3,12 @@
 #include <fmt/format.h>
 
 #include <server/handlers/http_handler_base_statistics.hpp>
-#include <server/http/http_request_impl.hpp>
 #include <server/http/request_handler_base.hpp>
 #include <server/net/create_socket.hpp>
 #include <userver/clients/http/client.hpp>
 #include <userver/engine/io/sockaddr.hpp>
 #include <userver/engine/sleep.hpp>
+#include <userver/server/http/http_request.hpp>
 
 #include <userver/utest/http_client.hpp>
 #include <userver/utest/utest.hpp>
@@ -27,13 +27,9 @@ public:
 
     explicit TestHttprequestHandler(Behaviors behavior = Behaviors::kNoop) : behavior_(behavior) {}
 
-    engine::TaskWithResult<void> StartRequestTask(std::shared_ptr<server::request::RequestBase> request
+    engine::TaskWithResult<void> StartRequestTask(std::shared_ptr<server::http::HttpRequest> http_request
     ) const override {
-        UASSERT(request);
-
-        auto& http_request = dynamic_cast<server::http::HttpRequestImpl&>(*request);
-        static server::handlers::HttpRequestStatistics statistics;
-        http_request.SetHttpHandlerStatistics(statistics);
+        UASSERT(http_request);
 
         switch (behavior_) {
             case Behaviors::kNoop:

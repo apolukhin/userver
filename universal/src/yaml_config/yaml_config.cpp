@@ -208,7 +208,7 @@ YamlConfig YamlConfig::operator[](size_t index) const {
         }
 
         // Avoid parsing $substitution as a string
-        return MakeMissingConfig(*this, index);
+        return MakeMissingConfig(*this, index)[value.As<std::string>()];
     }
 
     return {std::move(value), config_vars_};

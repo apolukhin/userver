@@ -22,7 +22,7 @@ jobs:
                         -DUSERVER_FEATURE_CORE=1
                         -DUSERVER_FEATURE_CHAOTIC=0
                     image: ubuntu-22.04-userver-base
-                    info: ubuntu + clang + cxx17 + core
+                    info: ubuntu + gcc + cxx17 + core
                     id: ubuntu_clang_cxx17_core
                   - cmake-flags: >-
                         -DCMAKE_C_COMPILER=clang-16
@@ -50,7 +50,6 @@ jobs:
                         -DCMAKE_C_COMPILER=clang-16
                         -DCMAKE_CXX_COMPILER=clang++-16
                         -DCMAKE_CXX_STANDARD=20
-                        -DUSERVER_NO_WERROR=0
                         -DUSERVER_BUILD_ALL_COMPONENTS=1
                         -DUSERVER_BUILD_SAMPLES=1
                         -DUSERVER_BUILD_TESTS=1

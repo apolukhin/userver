@@ -133,7 +133,7 @@ properties:
     conn_timeout:
         type: string
         description: connection timeout
-        defaultDescription: 100ms
+        defaultDescription: 2s
     so_timeout:
         type: string
         description: socket timeout

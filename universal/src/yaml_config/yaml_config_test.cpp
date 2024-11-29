@@ -325,6 +325,45 @@ TEST(YamlConfig, VariableMap) {
     EXPECT_EQ(conf["array_with_missing"].As<std::vector<std::optional<std::string>>>(), expected_vec_miss);
 }
 
+TEST(YamlConfig, NoVariableMap) {
+    auto node = formats::yaml::FromString(R"(
+    some_element:
+        some: $variable
+        some#env: DOES_NOT_EXIST
+        some#file: /does/not/exists
+        some2:
+          - 0
+          - 1
+          - $variable
+          - 3
+  )");
+
+    yaml_config::YamlConfig yaml(std::move(node), {}, yaml_config::YamlConfig::Mode::kEnvAndFileAllowed);
+    UEXPECT_THROW_MSG(
+        yaml["some_element"]["some"].As<int>(), std::exception, "Error at path 'some_element.some': Field is missing"
+    );
+    UEXPECT_THROW_MSG(
+        yaml["some_element"]["some2"][2].As<int>(),
+        std::exception,
+        "Error at path 'some_element.some2[2].$variable': Field is missing"
+    );
+    UEXPECT_THROW_MSG(
+        yaml["some_element"]["some2"][20].As<int>(),
+        std::exception,
+        "Error at path 'some_element.some2': Index 20 of array of size 4 is out of bounds"
+    );
+
+    node = formats::yaml::FromString(R"(
+    some_element:
+      some#env: DOES_NOT_EXIST
+      some#file: /does/not/exists
+    )");
+    yaml = yaml_config::YamlConfig(std::move(node), {}, yaml_config::YamlConfig::Mode::kEnvAndFileAllowed);
+    UEXPECT_THROW_MSG(
+        yaml["some_element"]["some"].As<int>(), std::exception, "Error at path 'some_element.some': Field is missing"
+    );
+}
+
 /// Common test base to make consistent tests between iterators and operator[]
 template <typename Accessor>
 class YamlConfigAccessor : public ::testing::Test {};

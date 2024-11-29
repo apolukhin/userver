@@ -2,17 +2,10 @@ project(userver-chaotic CXX)
 
 include(ChaoticGen)
 
-file(GLOB_RECURSE SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
+userver_module(chaotic
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+    UTEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*_test.cpp"
 )
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
-target_include_directories(
-    ${PROJECT_NAME}
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-)
-target_link_libraries(${PROJECT_NAME} PUBLIC userver-universal)
 
 if(USERVER_BUILD_TESTS)
   userver_venv_setup(
@@ -38,12 +31,6 @@ endif()
 
 _userver_directory_install(COMPONENT chaotic
     DIRECTORY
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    DESTINATION
-        "${CMAKE_INSTALL_INCLUDEDIR}/.."
-)
-_userver_directory_install(COMPONENT chaotic
-    DIRECTORY
         "${CMAKE_CURRENT_SOURCE_DIR}/chaotic"
     DESTINATION 
         "${CMAKE_INSTALL_LIBDIR}/userver"
@@ -53,10 +40,6 @@ _userver_directory_install(COMPONENT chaotic
         "${CMAKE_CURRENT_SOURCE_DIR}/bin/chaotic-gen"
     DESTINATION
         "${CMAKE_INSTALL_BINDIR}"
-)
-_userver_install_targets(COMPONENT chaotic
-    TARGETS
-        ${PROJECT_NAME}
 )
 _userver_directory_install(COMPONENT chaotic
     FILES

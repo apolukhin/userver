@@ -29,10 +29,11 @@ class CppType:
         return id(self)
 
     def is_isomorphic(self, other: 'CppType') -> bool:
+        assert self.json_schema is not None
         left = dataclasses.asdict(self.json_schema)
         left.pop('description', None)
         left['x_properties'].pop('description', None)
-
+        assert other.json_schema is not None
         right = dataclasses.asdict(other.json_schema)
         right.pop('description', None)
         right['x_properties'].pop('description', None)

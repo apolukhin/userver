@@ -19,7 +19,6 @@
 #include <userver/server/http/http_request.hpp>
 #include <userver/server/http/http_response.hpp>
 #include <userver/server/http/http_response_body_stream_fwd.hpp>
-#include <userver/server/request/request_base.hpp>
 // Not needed here, but a lot of code depends on it being included transitively
 #include <userver/tracing/span.hpp>
 
@@ -73,9 +72,9 @@ public:
 
     ~HttpHandlerBase() override;
 
-    void HandleRequest(request::RequestBase& request, request::RequestContext& context) const override;
+    void HandleRequest(http::HttpRequest& request, request::RequestContext& context) const override;
 
-    void ReportMalformedRequest(request::RequestBase& request) const final;
+    void ReportMalformedRequest(http::HttpRequest& request) const final;
 
     virtual const std::string& HandlerName() const;
 

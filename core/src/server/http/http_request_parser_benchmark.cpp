@@ -41,7 +41,7 @@ inline server::http::HttpRequestParser CreateBenchmarkParser(server::http::HttpR
 }  // namespace
 
 void http_request_parser_parse_benchmark_small(benchmark::State& state) {
-    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::request::RequestBase>&&) {});
+    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::http::HttpRequest>&&) {});
 
     for ([[maybe_unused]] auto _ : state) {
         parser.Parse(kHttpRequestDataSmall);
@@ -49,7 +49,7 @@ void http_request_parser_parse_benchmark_small(benchmark::State& state) {
 }
 
 void http_request_parser_parse_benchmark_middle(benchmark::State& state) {
-    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::request::RequestBase>&&) {});
+    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::http::HttpRequest>&&) {});
 
     for ([[maybe_unused]] auto _ : state) {
         parser.Parse(kHttpRequestDataMiddle);
@@ -57,7 +57,7 @@ void http_request_parser_parse_benchmark_middle(benchmark::State& state) {
 }
 
 void http_request_parser_parse_benchmark_large_url(benchmark::State& state) {
-    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::request::RequestBase>&&) {});
+    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::http::HttpRequest>&&) {});
 
     std::string large_url;
     for (size_t i = 0; i < kEntryCount; ++i) {
@@ -71,7 +71,7 @@ void http_request_parser_parse_benchmark_large_url(benchmark::State& state) {
 }
 
 void http_request_parser_parse_benchmark_large_body(benchmark::State& state) {
-    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::request::RequestBase>&&) {});
+    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::http::HttpRequest>&&) {});
 
     std::string large_body;
     for (size_t i = 0; i < kEntryCount; ++i) {
@@ -90,7 +90,7 @@ void http_request_parser_parse_benchmark_large_body(benchmark::State& state) {
 }
 
 void http_request_parser_parse_benchmark_many_headers(benchmark::State& state) {
-    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::request::RequestBase>&&) {});
+    auto parser = CreateBenchmarkParser([](std::shared_ptr<server::http::HttpRequest>&&) {});
 
     std::string headers;
     for (size_t i = 0; i < kEntryCount; ++i) {

@@ -71,6 +71,8 @@ private:
     concurrent::StripedCounter time_sum_;
 };
 
+// TODO: merge with HttpResponse
+
 /// @brief Base class for all the server responses.
 class ResponseBase {
 public:
