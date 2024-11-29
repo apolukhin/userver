@@ -1,6 +1,7 @@
 #include <userver/easy.hpp>
 
 #include <fstream>
+#include <iostream>
 #include <unordered_map>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -104,9 +105,8 @@ HttpBase::~HttpBase() {
     AddComponentsConfig(fmt::format(kConfigLoggingTemplate, ToString(level_)));
 
     namespace po = boost::program_options;
-
     po::variables_map vm;
-    po::options_description desc("Easy options");
+    auto desc = utils::BaseRunOptions();
     std::string config_dump;
     std::string schema_dump;
 
@@ -114,11 +114,17 @@ HttpBase::~HttpBase() {
     desc.add_options()
       ("dump-config", po::value(&config_dump), "path to dump the server config")
       ("dump-schema", po::value(&schema_dump), "path to dump the DB schema")
+      ("config,c", po::value<std::string>(), "path to server config")
     ;
     // clang-format on
 
-    po::store(po::command_line_parser(argc_, argv_).options(desc).allow_unregistered().run(), vm);
+    po::store(po::parse_command_line(argc_, argv_, desc), vm);
     po::notify(vm);
+
+    if (vm.count("help")) {
+        std::cerr << desc << '\n';
+        return;
+    }
 
     if (vm.count("dump-config")) {
         std::ofstream(config_dump) << static_config_;
@@ -131,9 +137,8 @@ HttpBase::~HttpBase() {
 
     if (argc_ <= 1) {
         components::Run(components::InMemoryConfig{static_config_}, component_list_);
-        return;
     } else {
-        const auto ret = utils::DaemonMain(argc_, argv_, component_list_);
+        const auto ret = utils::DaemonMain(vm, component_list_);
         if (ret != 0) {
             std::exit(ret);
         }

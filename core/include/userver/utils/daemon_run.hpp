@@ -5,21 +5,33 @@
 
 #include <userver/components/component_list.hpp>
 
+
+namespace boost::program_options {
+class options_description;
+class variables_map;
+}
+
 USERVER_NAMESPACE_BEGIN
 
 namespace utils {
 
-/// Parses command line arguments and calls components::Run with config file
-/// from --config parameter.
+/// @returns default options of DaemonMain
 ///
-/// Other command line arguments:
+/// List of options:
 /// * --help - show all command line arguments
 /// * --config CONFIG - path to config.yaml
 /// * --config_vars CONFIG_VARS - path to config_vars.yaml
 /// * --config_vars_override CONFIG_VARS - path to config_vars.override.yaml
 /// * --print-config-schema - print config.yaml YAML Schema
 /// * --print-dynamic-config-defaults - print JSON with dynamic config defaults
+boost::program_options::options_description BaseRunOptions();
+
+/// Parses command line arguments and calls components::Run with config file
+/// from --config parameter. See BaseRunOptions() for a list of options
 int DaemonMain(int argc, const char* const argv[], const components::ComponentList& components_list);
+
+/// @overload
+int DaemonMain(const boost::program_options::variables_map& vm, const components::ComponentList& components_list);
 
 }  // namespace utils
 
