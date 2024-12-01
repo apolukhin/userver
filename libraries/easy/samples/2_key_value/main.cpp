@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS key_value_table (
 
 int main(int argc, char* argv[]) {
     easy::HttpWith<easy::PgDep>(argc, argv)
-        .Schema(kSchema)
+        .DbSchema(kSchema)
         .DefaultContentType(http::content_type::kTextPlain)
         .Get(
             "/kv",

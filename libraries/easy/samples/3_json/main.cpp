@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS key_value_table (
 
 int main(int argc, char* argv[]) {
     easy::HttpWith<easy::PgDep>(argc, argv)
-        .Schema(kSchema)
+        .DbSchema(kSchema)
         .Get(
             "/kv",
             [](formats::json::Value request_json, const easy::PgDep& dep) {
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
                 return formats::json::ValueBuilder{response}.ExtractValue();
             }
         )
-        .Post("/kv", [](formats::json::Value request_json, const auto& dep) {
+        .Post("/kv", [](formats::json::Value request_json, easy::PgDep dep) {
             // Use generated parser for As()
             auto key_value = request_json.As<schemas::KeyValue>();
 

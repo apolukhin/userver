@@ -8,6 +8,7 @@
 #include <boost/program_options.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/clients/http/component.hpp>
 #include <userver/components/component_context.hpp>
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/components/run.hpp>
@@ -33,52 +34,51 @@ components_manager:
 
     default_task_processor: main-task-processor  # Task processor in which components start.
 
-    components:                       # Configuring components that were registered via component_list
-)~";
+    components:                       # Configuring components that were registered via component_list)~";
 
 constexpr std::string_view kConfigServerTemplate = R"~(
-server:
-    listener:                 # configuring the main listening socket...
-        port: {}            # ...to listen on this port and...
-        task_processor: main-task-processor    # ...process incoming requests on this task processor.
+        server:
+            listener:                 # configuring the main listening socket...
+                port: {}            # ...to listen on this port and...
+                task_processor: main-task-processor    # ...process incoming requests on this task processor.
 )~";
 
 constexpr std::string_view kConfigLoggingTemplate = R"~(
-logging:
-    fs-task-processor: fs-task-processor
-    loggers:
-        default:
-            file_path: '@stderr'
-            level: {}
-            overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
+        logging:
+            fs-task-processor: fs-task-processor
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: {}
+                    overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
 )~";
 
-constexpr std::string_view kConfigHandlerTemplate = R"~(
-{0}:
-    path: {1}                  # Registering handler by URL '{1}'.
-    method: {2}
-    task_processor: main-task-processor  # Run it on CPU bound task processor
-)~";
+constexpr std::string_view kConfigHandlerTemplate{
+    "path: {0}                  # Registering handler by URL '{0}'.\n"
+    "method: {1}\n"
+    "task_processor: main-task-processor  # Run it on CPU bound task processor\n"};
 
 struct SharedPyaload {
     std::unordered_map<std::string, HttpBase::Callback> http_functions;
     std::optional<http::ContentType> default_content_type;
-    std::string schema;
+    std::string db_schema;
 };
 
 SharedPyaload globals{};
 
 }  // anonymous namespace
 
+namespace impl {
+
 DependenciesBase::~DependenciesBase() = default;
 
-const std::string& DependenciesBase::GetSchema() noexcept { return globals.schema; }
+}  // namespace impl
 
 class HttpBase::Handle final : public server::handlers::HttpHandlerBase {
 public:
     Handle(const components::ComponentConfig& config, const components::ComponentContext& context)
         : HttpHandlerBase(config, context),
-          deps_{context.FindComponent<DependenciesBase>()},
+          deps_{context.FindComponent<impl::DependenciesBase>()},
           callback_{globals.http_functions.at(config.Name())} {}
 
     std::string HandleRequestThrow(const server::http::HttpRequest& request, server::request::RequestContext&)
@@ -90,7 +90,7 @@ public:
     }
 
 private:
-    const DependenciesBase& deps_;
+    const impl::DependenciesBase& deps_;
     HttpBase::Callback& callback_;
 };
 
@@ -101,8 +101,8 @@ HttpBase::HttpBase(int argc, const char* const argv[])
       component_list_{components::MinimalServerComponentList()} {}
 
 HttpBase::~HttpBase() {
-    AddComponentsConfig(fmt::format(kConfigServerTemplate, port_));
-    AddComponentsConfig(fmt::format(kConfigLoggingTemplate, ToString(level_)));
+    static_config_.append(fmt::format(kConfigServerTemplate, port_));
+    static_config_.append(fmt::format(kConfigLoggingTemplate, ToString(level_)));
 
     namespace po = boost::program_options;
     po::variables_map vm;
@@ -113,7 +113,7 @@ HttpBase::~HttpBase() {
     // clang-format off
     desc.add_options()
       ("dump-config", po::value(&config_dump), "path to dump the server config")
-      ("dump-schema", po::value(&schema_dump), "path to dump the DB schema")
+      ("dump-db-schema", po::value(&schema_dump), "path to dump the DB schema")
       ("config,c", po::value<std::string>(), "path to server config")
     ;
     // clang-format on
@@ -131,8 +131,8 @@ HttpBase::~HttpBase() {
         return;
     }
 
-    if (vm.count("dump-schema")) {
-        std::ofstream(schema_dump + "/0_pg.sql") << globals.schema;
+    if (vm.count("dump-db-schema")) {
+        std::ofstream(schema_dump) << globals.db_schema;
     }
 
     if (argc_ <= 1) {
@@ -152,43 +152,61 @@ void HttpBase::Route(std::string_view path, Callback&& func, std::initializer_li
 
     globals.http_functions.emplace(component_name, std::move(func));
     component_list_.Append<Handle>(component_name);
-    AddComponentsConfig(fmt::format(kConfigHandlerTemplate, component_name, path, fmt::join(methods, ",")));
+    AddComponentConfig(component_name, fmt::format(kConfigHandlerTemplate, path, fmt::join(methods, ",")));
 }
 
-void HttpBase::AddComponentsConfig(std::string_view config) {
-    auto conf = fmt::format("\n{}\n", config);
-    static_config_ += boost::algorithm::replace_all_copy(conf, "\n", "\n        ");
+void HttpBase::AddComponentConfig(std::string_view component, std::string_view config) {
+    static_config_ += fmt::format("\n        {}:", component);
+    if (config.empty()) {
+        static_config_ += " {}\n";
+    } else {
+        if (config.back() == '\n') {
+            config = std::string_view{config.data(), config.size() - 1};
+        }
+        static_config_ += boost::algorithm::replace_all_copy("\n" + std::string{config}, "\n", "\n            ");
+        static_config_ += '\n';
+    }
 }
 
-void HttpBase::Schema(std::string_view schema) { globals.schema = schema; }
+void HttpBase::DbSchema(std::string_view schema) { globals.db_schema = schema; }
+
+const std::string& HttpBase::GetDbSchema() noexcept { return globals.db_schema; }
 
 void HttpBase::Port(std::uint16_t port) { port_ = port; }
 
 void HttpBase::LogLevel(logging::Level level) { level_ = level; }
 
-PgDep::PgDep(const components::ComponentConfig& config, const components::ComponentContext& context)
-    : DependenciesBase{config, context},
-      pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster()) {
-    pg_cluster_->Execute(storages::postgres::ClusterHostType::kMaster, GetSchema());
+PgDep::PgDep(const components::ComponentContext& context)
+    : pg_cluster_(context.FindComponent<components::Postgres>("postgres").GetCluster()) {
+    pg_cluster_->Execute(storages::postgres::ClusterHostType::kMaster, HttpBase::GetDbSchema());
 }
 
-void Registration(OfDependency<PgDep>, HttpBase& app) {
-    app.AddComponentsConfig(R"~(
-postgres:
-    dbconnection#env: POSTGRESQL
-    dbconnection#fallback: 'postgresql://testsuite@localhost:15433/postgres'
-    blocking_task_processor: fs-task-processor
-    dns_resolver: async
+void PgDep::RegisterOn(HttpBase& app) {
+    app.TryAddComponent<components::Postgres>(
+        "postgres",
+        "dbconnection#env: POSTGRESQL\n"
+        "dbconnection#fallback: 'postgresql://testsuite@localhost:15433/postgres'\n"
+        "blocking_task_processor: fs-task-processor\n"
+        "dns_resolver: async\n"
+    );
 
-testsuite-support:
+    app.TryAddComponent<components::TestsuiteSupport>(components::TestsuiteSupport::kName, "");
+    app.TryAddComponent<clients::dns::Component>(
+        clients::dns::Component::kName, "fs-task-processor: fs-task-processor"
+    );
+}
 
-dns-client:
-    fs-task-processor: fs-task-processor
-)~");
+HttpDep::HttpDep(const components::ComponentContext& context)
+    : http_(context.FindComponent<components::HttpClient>().GetHttpClient()) {}
 
-    app.AppendComponent<components::Postgres>("postgres");
-    app.AppendComponent<components::TestsuiteSupport>();
-    app.AppendComponent<clients::dns::Component>();
+void HttpDep::RegisterOn(easy::HttpBase& app) {
+    app.TryAddComponent<components::HttpClient>(
+        components::HttpClient::kName,
+        "pool-statistics-disable: false\n"
+        "thread-name-prefix: http-client\n"
+        "threads: 2\n"
+        "fs-task-processor: fs-task-processor\n"
+    );
 }
 
 }  // namespace easy
