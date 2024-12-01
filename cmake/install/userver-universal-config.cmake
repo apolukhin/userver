@@ -7,7 +7,7 @@ endif()
 include("${USERVER_CMAKE_DIR}/ModuleHelpers.cmake")
 
 find_package(Threads)
-find_package(Boost REQUIRED COMPONENTS
+find_package(Boost REQUIRED CONFIG COMPONENTS
     program_options
     filesystem
     regex
@@ -39,6 +39,7 @@ include("${USERVER_CMAKE_DIR}/AddGoogleTests.cmake")
 include("${USERVER_CMAKE_DIR}/Sanitizers.cmake")
 include("${USERVER_CMAKE_DIR}/UserverSetupEnvironment.cmake")
 include("${USERVER_CMAKE_DIR}/UserverVenv.cmake")
+include("${USERVER_CMAKE_DIR}/UserverEmbedFile.cmake")
 
 userver_setup_environment()
 _userver_make_sanitize_blacklist()

@@ -50,7 +50,7 @@ implementation details are hidden and the header is lightweight to include:
 HTTP handlers must derive from `server::handlers::HttpHandlerBase` and have a name, that
 is obtainable at compile time via `kName` variable and is obtainable at runtime via `HandlerName()`.
 
-The primary functionality of the handler should be located in `HandleRequestThrow` function.
+The primary functionality of the handler should be located in `HandleRequest` function.
 Return value of this function is the HTTP response body. If an exception `exc` derived from
 `server::handlers::CustomHandlerException` is thrown from the function then the
 HTTP response code will be set to `exc.GetCode()` and `exc.GetExternalErrorBody()`
@@ -85,6 +85,25 @@ add our component to the `components::MinimalServerComponentList()`,
 and start the server with static configuration file passed from command line.
 
 @include samples/hello_service/main.cpp
+
+You can either pass argc, argv to `utils::DaemonRun()` to parse config yaml and config vars
+filepaths from arguments, or you may use embedded config file.
+
+
+### Embedded files
+
+Sometimes it is handy to embed file(s) content into the binary to avoid additional filesystem reads.
+You may use it with `userver_embed_file()` cmake function.
+It generates cmake target which can be linked into your executable target.
+
+Cmake part looks like the following:
+
+@snippet samples/embedded_files/CMakeLists.txt  embedded
+
+C++ part looks simple - include the generated header and use `utils::FindResource()` function to
+get the embedded file contents:
+
+@snippet samples/embedded_files/main.cpp  embedded usage
 
 
 ### CMake

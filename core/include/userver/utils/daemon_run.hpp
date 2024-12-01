@@ -4,6 +4,7 @@
 /// @brief Functions to start a daemon with specified components list.
 
 #include <userver/components/component_list.hpp>
+#include <userver/components/run.hpp>
 
 
 namespace boost::program_options {
@@ -27,11 +28,17 @@ namespace utils {
 boost::program_options::options_description BaseRunOptions();
 
 /// Parses command line arguments and calls components::Run with config file
-/// from --config parameter. See BaseRunOptions() for a list of options
+/// from --config parameter. See BaseRunOptions() for a list of options.
+/// Reports unhandled exceptions.
 int DaemonMain(int argc, const char* const argv[], const components::ComponentList& components_list);
 
-/// @overload
+/// Calls components::Run with config file from --config parameter.
+/// Reports unhandled exceptions.
 int DaemonMain(const boost::program_options::variables_map& vm, const components::ComponentList& components_list);
+
+/// Calls components::Run with in-memory config.
+/// Reports unhandled exceptions.
+int DaemonMain(const components::InMemoryConfig& config, const components::ComponentList& components_list);
 
 }  // namespace utils
 
