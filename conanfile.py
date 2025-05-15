@@ -40,6 +40,7 @@ class UserverConan(ConanFile):
         'with_utest': [True, False],
         'with_kafka': [True, False],
         'with_otlp': [True, False],
+        'with_sqlite': [True, False],
         'with_easy': [True, False],
         'with_s3api': [True, False],
         'with_grpc_reflection': [True, False],
@@ -63,6 +64,7 @@ class UserverConan(ConanFile):
         'with_utest': True,
         'with_kafka': True,
         'with_otlp': True,
+        'with_sqlite': True,
         'with_easy': True,
         'with_s3api': True,
         'with_grpc_reflection': True,
@@ -173,6 +175,8 @@ class UserverConan(ConanFile):
             )
         if self.options.with_kafka:
             self.requires('librdkafka/2.6.0')
+        if self.options.with_sqlite:
+            self.requires('sqlite3/3.46.1')
         if self.options.with_s3api:
             self.requires('pugixml/1.14')
         if self.options.with_otlp:
@@ -218,6 +222,7 @@ class UserverConan(ConanFile):
         tool_ch.variables['USERVER_FEATURE_TESTSUITE'] = self.options.with_utest
         tool_ch.variables['USERVER_FEATURE_KAFKA'] = self.options.with_kafka
         tool_ch.variables['USERVER_FEATURE_OTLP'] = self.options.with_otlp
+        tool_ch.variables['USERVER_FEATURE_SQLITE'] = self.options.with_sqlite
         tool_ch.variables['USERVER_FEATURE_EASY'] = self.options.with_easy
         tool_ch.variables['USERVER_FEATURE_S3API'] = self.options.with_s3api
         tool_ch.variables['USERVER_FEATURE_GRPC_REFLECTION'] = self.options.with_grpc_reflection

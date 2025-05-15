@@ -128,6 +128,11 @@ if (USERVER_FEATURE_YDB AND USERVER_FEATURE_MONGODB)
   add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-ydb_service)
 endif()
 
+if (USERVER_FEATURE_SQLITE)
+  add_subdirectory(sqlite_service)
+  add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-sqlite_service)
+endif()
+
 if (USERVER_FEATURE_S3API)
   add_subdirectory(s3api)
   add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}-s3api)

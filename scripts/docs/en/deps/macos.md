@@ -30,3 +30,4 @@ pugixml
 rocksdb
 yaml-cpp
 zlib
+sqlite
